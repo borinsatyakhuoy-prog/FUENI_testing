@@ -1,6 +1,6 @@
 # Automation Testing (FUENI E2E QA)
 
-End-to-end QA automation for the FAPA application, driven by natural-language prompts to Claude Code using Playwright MCP and specialized agents (test planner, generator, healer).
+End-to-end QA automation for the FUENI application, driven by natural-language prompts to Claude Code using Playwright MCP and specialized agents (test planner, generator, healer).
 
 ---
 
