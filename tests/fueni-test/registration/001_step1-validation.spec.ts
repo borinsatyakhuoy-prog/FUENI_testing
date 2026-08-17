@@ -3,6 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Registration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/fr/register');
+    // Confirmed live: filling the very first field (Prénom) too early - before
+    // this SPA finishes hydrating - can silently no-op (the value "sticks"
+    // visually but a later re-render clears it, since the framework's
+    // controlled-input state was never actually updated). Waiting for
+    // network activity to settle gives hydration time to complete first.
+    await page.waitForLoadState('networkidle');
   });
 
   test('step 1 shows all required fields and a live password-strength check', async ({ page }) => {
@@ -40,7 +46,7 @@ test.describe('Registration', () => {
       .fill(`qa-automation+${Date.now()}@example.com`);
     await page
       .getByRole('textbox', { name: 'Numéro de téléphone (partie nationale)' })
-      .fill(String(Date.now()).slice(-8));
+      .fill(`9${String(Date.now()).slice(-7)}`);
     const passwordField = page.getByRole('textbox', { name: '••••••••••••' });
     await passwordField.click();
     await passwordField.pressSequentially('TestAutomation123!');

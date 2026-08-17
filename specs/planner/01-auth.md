@@ -60,6 +60,10 @@
     - expect: The "Envoyer le code" button starts disabled while a Cloudflare Turnstile check
       ("Un instant — vérification de votre sécurité…") runs, and the test must wait for that
       check to clear rather than assuming the button is immediately interactive
+  - Known CI-reliability caveat: passed reliably in isolation, but Turnstile was observed to
+    stop clearing at all (not just slowly) after several consecutive automated runs in a short
+    window - almost certainly bot-detection escalation, not a timing issue. See
+    test-results/exploratory-findings.md.
 
 #### 1.5. Sign out ends the session
 

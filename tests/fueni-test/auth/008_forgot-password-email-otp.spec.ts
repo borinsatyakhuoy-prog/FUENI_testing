@@ -9,9 +9,10 @@ test.describe('Authentication', () => {
     await page.getByRole('tab', { name: 'E-mail' }).click();
     await page.getByRole('textbox', { name: 'Identifiant' }).fill(email);
 
-    // Gated by Cloudflare Turnstile, same as 004_forgot-password-wizard-start.
+    // Gated by Cloudflare Turnstile, same as 004_forgot-password-wizard-start
+    // (including that file's known CI-reliability caveat).
     const sendCode = page.getByRole('button', { name: 'Envoyer le code' });
-    await expect(sendCode).toBeEnabled({ timeout: 60_000 });
+    await expect(sendCode).toBeEnabled({ timeout: 120_000 });
     await sendCode.click();
 
     // Confirms the e-mail OTP channel genuinely works (not a dead end) -

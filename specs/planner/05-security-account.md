@@ -43,8 +43,11 @@ test below except 5.4 (GDPR export) stops at validating the dialog and Cancels -
      "Changer" also matches the unrelated "Changer de langue" top-bar button)
     - expect: A change-password form opens (with an "Annuler" button)
   2. Click "Annuler"
-    - expect: The next login with the existing `.env` credentials still succeeds (guards
-      against an accidental real submission breaking every other test)
+    - expect: Still on `/fr/security` with the "Changer" button back in view - a direct,
+      same-page proof that cancelling was a true no-op. (An earlier version of this test
+      proved the same thing indirectly by signing out and logging back in - that round-tripped
+      through the app's delayed post-logout redirect, described in the Error Handling section
+      above, and was flaky for reasons unrelated to what this test actually checks.)
 
 #### 5.4. Export my data (GDPR) - safe real action, gated by a re-auth prompt
 

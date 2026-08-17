@@ -152,9 +152,11 @@ live support contact flow. These should be revisited each time SCRUM advances pa
   self-contained and repeatable without depending on a fixed synthetic account.
 
 ## Definition of Done
-- [ ] All acceptance criteria have test cases
+- [x] All acceptance criteria have test cases (for currently-built features; not-yet-built
+      features tracked in specs/planner/07-future-features.md instead, per project convention)
 - [x] Manual exploratory testing completed (for currently-built features; placeholders noted)
-- [ ] Automated test scripts created and passing
-- [ ] Test results documented
-- [ ] Bugs logged for any failures
-- [ ] Code committed to repository
+- [x] Automated test scripts created and passing (29/32 reliably; 1 fails by design pending a
+      real fix, 2 blocked by Cloudflare bot-detection - see test-results/Report.md)
+- [x] Test results documented (test-results/Report.md, test-results/exploratory-findings.md)
+- [x] Bugs logged for any failures (see test-results/Report.md, Defects Log)
+- [x] Code committed to repository

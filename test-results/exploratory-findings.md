@@ -153,6 +153,30 @@ Automated tests should open the "Modifier" dialogs to validate their fields/labe
 Cancel, per the real-data-safety principle - not submit real changes to the shared test
 account's location or emergency contact.
 
+## Additional finding (during automated-test healing) - Cloudflare Turnstile blocks repeated automated runs
+
+**Severity:** Environmental limitation, not a test bug - affects CI reliability of three specs.
+
+During healing, every Turnstile-style security check in the app - the password-reset wizard
+(`tests/fueni-test/auth/004_forgot-password-wizard-start.spec.ts`,
+`008_forgot-password-email-otp.spec.ts`) and the registration wizard's own step-3 check
+(`tests/fueni-test/registration/002_step1-to-step2.spec.ts`) - initially passed, then began
+reliably failing after several consecutive automated runs against the same environment in a
+short window: the gated button/message stayed stuck in its "checking" state for the full wait
+(raised from 30s up to 120s in the password-reset case; confirmed via 200+ polls in the trace
+that the button's `disabled` attribute never cleared). This is consistent with Cloudflare's
+bot-detection escalating against repeated automated traffic from the same session/IP rather than
+a slow-but-eventually-clearing challenge - increasing the timeout further did not help, which is
+the key signal it's not a simple timing issue, and the fact that it now affects *every* such
+check in the app (not just one) points at the traffic source, not any one flow.
+
+**Practical implication:** all three specs are correct and did pass earlier in this same
+session - they're left in the suite as-is (not skipped), but expect them to be flaky-to-failing
+in CI or when re-run repeatedly in quick succession. If this becomes a recurring problem,
+options to investigate: spacing out CI runs, a dedicated Turnstile bypass/test-mode token from
+the FUENI team for staging, or moving these specific assertions to a manual/exploratory
+checklist instead of automated CI. Not something a test-code fix can resolve on its own.
+
 ## Additional finding (during automated-test healing) - "Exporter mes données" is re-auth gated
 
 Discovered while healing `tests/fueni-test/security/004_export-data.spec.ts`: clicking

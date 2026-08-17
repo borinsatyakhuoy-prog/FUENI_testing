@@ -21,7 +21,7 @@ export default defineConfig({
    * Turnstile check that was observed live taking 40-60s to clear - longer
    * than Playwright's 30s per-test default. A per-assertion timeout alone
    * isn't enough, since the overall test timeout still caps it. */
-  timeout: 90_000,
+  timeout: 150_000,
   fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,

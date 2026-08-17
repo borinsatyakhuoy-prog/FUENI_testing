@@ -12,8 +12,12 @@ test.describe('Authentication', () => {
 
     // Gated by a Cloudflare Turnstile check - the button starts disabled and
     // enables once the check clears; don't assume it's immediately clickable.
+    // Known CI-reliability caveat: Turnstile was observed to stop clearing at
+    // all (not just slowly) after several consecutive automated runs in a
+    // short window - likely bot-detection escalation, not a timing issue a
+    // longer wait can fix. See test-results/exploratory-findings.md.
     await expect(page.getByRole('button', { name: 'Envoyer le code' })).toBeEnabled({
-      timeout: 60_000,
+      timeout: 120_000,
     });
   });
 });
