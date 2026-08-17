@@ -1,0 +1,37 @@
+
+# VS Code MCP config (contains prompted secrets in inputs, keep local)
+.vscode/
+
+# Claude Code local settings/permission cache - machine-specific, keep local
+.claude/
+
+# Playwright
+node_modules/
+/test-results/*
+!/test-results/*.md
+/playwright-output/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+.playwright-mcp/
+/allure-results/
+/allure-report/
+/allure-history/
+/monocart-report/
+/monocart-chunks/
+
+# Secrets - never commit real credentials
+.env
+
+# Real downloaded reports/exports (contain real patient/doctor data)
+tests/fueni-test/fixtures/downloads/
+
+# Ticket verification records (screenshots, scratch scripts) - kept locally, not in the repo
+/tickets/
+
+# Generated test fixtures for ticket verification - kept locally, not in the repo
+/test-material/
+
+# Standalone defect write-ups discovered during QA verification, not yet filed against a tracked ticket - kept locally, not in the repo
+/defects/
