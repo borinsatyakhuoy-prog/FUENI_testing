@@ -27,11 +27,5 @@ node_modules/
 # Real downloaded reports/exports (contain real patient/doctor data)
 tests/fueni-test/fixtures/downloads/
 
-# Ticket verification records (screenshots, scratch scripts) - kept locally, not in the repo
-/tickets/
-
 # Generated test fixtures for ticket verification - kept locally, not in the repo
 /test-material/
-
-# Standalone defect write-ups discovered during QA verification, not yet filed against a tracked ticket - kept locally, not in the repo
-/defects/
