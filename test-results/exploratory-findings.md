@@ -290,3 +290,46 @@ jar (this session performed many consecutive logins/logouts) rather than a genui
 logged as a defect and not given a regression test; flagged here only so a future session
 doesn't waste time rediscovering the same red herring. If it recurs from a **fresh** browser
 context, it should be re-opened as a real Issue.
+
+---
+
+# Session 4 (2026-08-19) - OWASP-aligned security pass
+
+**Goal:** a lightweight, passive OWASP Top 10 / API Security Top 10-aligned check - no
+exploitation attempted, no brute-forcing of the shared account (too risky - would break every
+other test depending on it), just configuration verification and header/response inspection.
+
+## Positive findings - confirmed secure, no defect
+
+- **Resource Owner Password Credentials (ROPC) grant is correctly disabled for this client.**
+  The Keycloak realm's OIDC discovery document (`/.well-known/openid-configuration`) lists
+  `"password"` as a realm-wide supported grant type, which raised the question of whether
+  Cloudflare Turnstile's UI-only protection on the login form could be trivially bypassed via a
+  direct POST to the token endpoint (`grant_type=password`) - a classic API-layer bypass of a
+  UI-layer control. Tested directly against the token endpoint using the shared test account's
+  own already-authorized credentials: the client `fueni-auth-context` correctly rejects it with
+  `401 unauthorized_client` / "Invalid client or Invalid client credentials" - Direct Access
+  Grants are disabled for this client, so this bypass path does not exist. No defect.
+- **No exposed sensitive files.** Checked `/.git/config`, `/.env`, `/.env.local`,
+  `/package.json`, `/.well-known/security.txt`, `/sitemap.xml` on the patient app's web root -
+  all return a clean 404. No defect.
+
+## Issue 5 (new) - Keycloak `userinfo` endpoint has a permissive CORS policy
+
+See `defects/keycloak-userinfo-cors-misconfiguration/README.md` for the full write-up. Summary:
+the endpoint reflects back any `Origin` (including a completely fabricated,
+never-registered one) alongside `Access-Control-Allow-Credentials: true` - no origin allowlist at
+all. Confirmed via a real cross-origin browser `fetch()` from the actual patient-app origin that
+the response is genuinely exposed to JS (not blocked), not just via raw header inspection.
+Severity kept at Low rather than higher because this specific endpoint separately requires a
+Bearer token (cookies alone got a `401`), so it isn't currently chainable into an actual data
+leak - but the policy itself has no scoping, so any other cookie-authenticated endpoint on the
+same auth domain would be immediately exploitable by the same gap.
+
+## Not tested (deliberately, risk-based decision)
+
+- **Login brute-force/lockout behavior:** would require multiple failed attempts against the
+  real shared test account, risking either a Keycloak brute-force lockout (breaking every other
+  test relying on this account) or further Cloudflare escalation on top of what's already
+  documented in Issue 3. Recommend testing this only against a dedicated, disposable account if
+  ever prioritized.

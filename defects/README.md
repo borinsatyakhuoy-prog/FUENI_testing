@@ -17,6 +17,7 @@ Gitignored (matching `tickets/`'s convention) - local-only, not pushed.
 | [404-page-unbranded](404-page-unbranded/README.md) | Patient | Low | Confirmed, live regression test (functional-only) | Unknown routes return Next.js's default English 404 instead of a branded French page |
 | [http-security-header-gaps](http-security-header-gaps/README.md) | Patient | Medium (session cookie), Low (rest) | Confirmed via header/cookie inspection, not yet automated | Session cookie missing `Secure`; CSP has no `script-src`; conflicting `Referrer-Policy` values; nginx version disclosed |
 | [doctor-country-not-listed-untranslated-english](doctor-country-not-listed-untranslated-english/README.md) | Doctor | Low | Confirmed, reproduced (no doctor-role automated suite yet) | "Country not listed" waitlist panel's body text is untranslated English on an otherwise French page |
+| [keycloak-userinfo-cors-misconfiguration](keycloak-userinfo-cors-misconfiguration/README.md) | Patient (Keycloak) | Low | Confirmed via real cross-origin browser fetch, not yet automated | `userinfo` endpoint reflects any Origin + allows credentials with no allowlist; not currently chainable into data leakage since this endpoint requires Bearer auth, but the policy itself is unscoped |
 
 Additional low-severity findings not written up as their own defect folder (documentation/AC
 corrections, environmental limitations, informational notes) are tracked inline in
