@@ -62,3 +62,21 @@ validating the form and clicking "Annuler" - they must not click "Enregistrer".
   - Note: toggling these is a real account-state mutation; a full toggle-and-revert test is
     deferred until confirmed idempotent/safe against the shared account - for now this test
     only asserts the displayed state, does not click the switches.
+
+#### 4.5. SMS notification-reminder toggle is a real, persisted, safely revertible mutation
+
+**File:** `tests/fueni-test/profile/005_notification-preference-toggle-persists.spec.ts`
+
+**Steps:**
+  1. On `/fr/my-profile`, click the "Rappels de rendez-vous par SMS" switch
+    - expect: A `PUT /api/v1/patients/me/notification-preferences` request fires and returns
+      200; the switch flips to "Off"
+  2. Reload the page
+    - expect: The switch is still "Off" - confirming this is a real persisted mutation, not just
+      local UI state
+  3. Click the switch again to revert it
+    - expect: Flips back to "On" and stays "On" (wrapped in `try`/`finally` so the shared
+      account's real state is restored even if an earlier assertion fails)
+  - Confirmed live 2026-08-18, resolving 4.4's deferred question: this is safe to automate for
+    real. No defect found; occasionally flaky on the first PUT response in CI (self-heals via
+    the suite's global `retries: 2`) - see `test-results/Report.md`.

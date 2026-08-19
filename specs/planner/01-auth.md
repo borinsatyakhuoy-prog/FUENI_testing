@@ -117,3 +117,40 @@
     available, only OTP from email" note actually refers to. Do not complete this test past
     step 2 against the shared account without a way to read that inbox and without intending to
     actually change its password - stop at asserting the "code sent" state.
+
+#### 1.9. Phone tab login succeeds (AC1's "or phone/password" path)
+
+**File:** `tests/fueni-test/auth/009_phone-login-success.spec.ts`
+
+**Steps:**
+  1. On the login page ("Téléphone" tab, the default), enter the shared test account's national
+     phone number (`FUENI_PHONE_NATIONAL` - the "+855" country code is already the default) and
+     the account password, then click "Connexion"
+    - expect: Redirected to `/fr/dashboard`, same as the e-mail-tab path (1.1)
+  - Confirmed live 2026-08-18: this path was previously documented in AC1 but never actually
+    exercised by the suite - all other auth specs use the E-mail tab exclusively.
+
+#### 1.10. Browser back button after logout does not restore cached protected content
+
+**File:** `tests/fueni-test/auth/010_back-button-after-logout.spec.ts`
+
+**Steps:**
+  1. Log in, navigate to `/fr/security`, then click "Se déconnecter"
+  2. Press the browser back button
+    - expect: Does not show the cached "Connexion & Sécurité" page - a fresh Keycloak auth
+      challenge is issued instead, and the login form is shown
+  - Confirmed live 2026-08-18: addresses the `user-stories/SCRUM.md` Technical Notes item "test
+    navigation flow and back button behavior", previously untested. No defect found.
+
+#### 1.11. Password show/hide toggle actually unmasks and re-masks the field
+
+**File:** `tests/fueni-test/auth/011_password-show-hide-toggle.spec.ts`
+
+**Steps:**
+  1. On the login page, type a value into "Mot de passe", then click "Afficher/masquer le mot
+     de passe"
+    - expect: The input's `type` attribute flips from `password` to `text`
+  2. Click the toggle again
+    - expect: Flips back to `type="password"`
+  - Confirmed live 2026-08-18: previously only asserted the toggle button was present (1.1), not
+    that it actually changes the field's masking. No defect found.

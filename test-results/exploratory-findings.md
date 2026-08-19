@@ -196,3 +196,97 @@ corrected accordingly.
 - **Mon compte & mes données**: "Exporter mes données" (GDPR JSON export - read-only,
   **safe to execute for real**), account-deletion instructions (support-mediated only, no
   in-app flow yet), and Privacy Policy / Terms of Service buttons.
+
+---
+
+# Session 2 (2026-08-18) - Additional Exploratory Testing
+
+**Goal:** re-explore the already-built patient app for test cases and defects not covered by the
+first pass (2026-08-17) - targeting gaps flagged in `test-results/Report.md` (deferred items,
+untested AC paths) plus areas never touched (top-bar controls, session/back-button behavior,
+input edge cases, error routes). Same shared account and both staging hosts.
+
+## Issue 4 (new) - "Notifications" bell button is a dead UI element
+
+**Severity:** Low/Medium (missing functionality, not a crash).
+
+**Steps to reproduce:** Log in, click the bell icon in the top bar (next to the language
+switcher), on any page.
+
+**Actual result:** Nothing happens - no dropdown, panel, dialog, badge, or toast appears, and no
+network request fires. No console/page error either, so it fails silently rather than crashing.
+Confirmed via accessibility snapshot and a screenshot (button gains focus/`[active]` state only).
+
+**Expected:** Either a functioning notifications panel, or the button should be hidden/disabled
+until the feature ships (consistent with how the sidebar's not-yet-built destinations show an
+explicit "Bientôt disponible" placeholder instead of a silently-dead control).
+
+**Test coverage:** `tests/fueni-test/navigation/005_notifications-bell-is-inert.spec.ts`
+documents the current state; written to start failing (prompting an update) the moment a real
+panel ships.
+
+## Positive findings - previously untested AC/Technical-Notes paths, confirmed working
+
+- **Phone/password login (AC1's "or phone/password" path):** logging in via the "Téléphone" tab
+  with the shared account's verified national number + password succeeds and reaches
+  `/fr/dashboard`, identically to the e-mail path. Previously documented in the AC but never
+  exercised - every existing auth spec used the E-mail tab exclusively. Now covered by
+  `auth/009_phone-login-success.spec.ts`.
+- **Browser back-button after logout** (`user-stories/SCRUM.md` Technical Notes: "test
+  navigation flow and back button behavior", previously untested): pressing back after signing
+  out does not restore the cached "Connexion & Sécurité" page - it re-issues a fresh Keycloak
+  auth challenge. Session termination is real, not just a client-side navigation. Now covered by
+  `auth/010_back-button-after-logout.spec.ts`.
+- **Direct URL access to more than just the dashboard while logged out:** `/fr/my-profile` and
+  `/fr/security` both correctly redirect to login when accessed directly without a session,
+  same as the already-tested `/fr/dashboard`. Now covered by
+  `navigation/004_direct-url-protected-routes-redirect.spec.ts`.
+- **Password show/hide toggle genuinely works:** clicking "Afficher/masquer le mot de passe"
+  flips the input's `type` attribute between `password` and `text` (confirmed via
+  `page.evaluate`), not just a decorative icon. Now covered by
+  `auth/011_password-show-hide-toggle.spec.ts`.
+- **Login-page language switcher is fully functional, not a stub:** clicking the "Français
+  fr"/"English en" button in the top-left of the (pre-login) branded panel opens a real menu;
+  choosing the other language fully translates the entire login page (heading, tab labels,
+  placeholders, links, "Rester connecté"/"Keep me signed in", etc.) via a `kc_locale` query
+  param round-trip through Keycloak. Upgrades the prior "toggle present but only fr seen"
+  finding to a fully-confirmed, positive result. No new automated test added (out of scope for
+  this pass - the assertion surface is large); a follow-up spec could assert a handful of
+  translated strings per language.
+- **Email login is case-insensitive:** logging in with the shared account's e-mail in all
+  uppercase (`LECALAL288@HUTDOT.COM`) succeeded, same as the normal-cased address. No defect.
+- **Notification-preference toggle is a real, persisted, and safely revertible mutation** -
+  resolves the item previously marked deferred in `test-results/Report.md` ("no safe way to
+  revert confirmed yet"). Clicking "Rappels de rendez-vous par SMS" fires
+  `PUT /api/v1/patients/me/notification-preferences` (200 OK), the new state survives a page
+  reload (confirming it's a real backend write, not just local UI state), and clicking it again
+  is a true, clean revert back to "On". Now covered for real by
+  `profile/005_notification-preference-toggle-persists.spec.ts` (wrapped in `try`/`finally` so
+  the shared account is never left mutated even if an assertion fails mid-test). Observed one
+  transient flake in this session where the first PUT response wasn't immediately `ok()` -
+  passed on Playwright's built-in retry; not reproduced on a second full run, so treated as
+  environmental noise rather than a product defect for now.
+
+## Minor finding - unknown-route 404 page is generic and unbranded
+
+Navigating to a nonexistent route (e.g. `/fr/this-route-does-not-exist-xyz123`) correctly returns
+an HTTP 404 (not a crash, not a redirect loop), but the page itself is Next.js's default
+"404 / This page could not be found." - plain text, English-only, no FUENI header/sidebar/footer,
+no link back to the app. Every other page in the product is branded and French. Low severity
+(doesn't block any user flow - a mistyped URL is rare and the browser back button recovers
+fine), but worth a UI fix for consistency. Covered by
+`navigation/006_unknown-route-404.spec.ts` (asserts the 404 status/heading only, not the
+branding gap).
+
+## Non-issue investigated - a one-off stale-error flash while switching languages mid-session
+
+While manually toggling the login page between English and Français in the same browser
+session, one interaction briefly showed an "Incorrect identifier or password." alert in English
+on an otherwise-empty Téléphone tab, immediately after a language-menu click that hadn't touched
+the login form at all. This did not reproduce on a fresh page load/navigation, and is most
+likely an artifact of Keycloak's server-rendered authentication flow carrying over stale
+execution/tab state from earlier form submissions in the same long-lived browser session/cookie
+jar (this session performed many consecutive logins/logouts) rather than a genuine bug. Not
+logged as a defect and not given a regression test; flagged here only so a future session
+doesn't waste time rediscovering the same red herring. If it recurs from a **fresh** browser
+context, it should be re-opened as a real Issue.

@@ -41,3 +41,37 @@
   1. From several different sidebar destinations (Dashboard, Mon profil, Connexion & Sécurité),
      confirm the "Se déconnecter" button is present at the bottom of the sidebar
     - expect: Visible and clickable regardless of which page is active
+
+#### 3.4. Direct URL access to protected MON COMPTE routes redirects when logged out
+
+**File:** `tests/fueni-test/navigation/004_direct-url-protected-routes-redirect.spec.ts`
+
+**Steps:**
+  1. Without logging in, navigate directly to `/fr/dashboard`, `/fr/my-profile`, and
+     `/fr/security` in turn (each in a fresh, unauthenticated browser context)
+    - expect: Each redirects to the login page rather than showing any cached/partial content
+  - Extends auth/005's dashboard-only check (which tests the same thing after an explicit
+    logout) to the other MON COMPTE routes. Confirmed live 2026-08-18: no defect found.
+
+#### 3.5. Notifications bell is currently a dead UI element
+
+**File:** `tests/fueni-test/navigation/005_notifications-bell-is-inert.spec.ts`
+
+**Steps:**
+  1. Log in, click the top-bar "Notifications" bell button
+    - expect (current, documented behavior): No panel, dropdown, or dialog opens; no console/page
+      error fires either - it's a silent no-op, not a crash
+  - **Known issue (2026-08-18):** see Defects Log, Issue 4 in `test-results/Report.md`. This spec
+    documents the current (broken) state and should start failing - and get rewritten to assert
+    real panel content - the moment a notifications feature ships.
+
+#### 3.6. Unknown routes return a real 404, not a crash
+
+**File:** `tests/fueni-test/navigation/006_unknown-route-404.spec.ts`
+
+**Steps:**
+  1. Navigate to a nonexistent route (e.g. `/fr/this-route-does-not-exist-xyz123`)
+    - expect: HTTP 404 status; a "404" heading is shown
+  - Confirmed live 2026-08-18: the 404 page itself is a generic, unbranded, English-only default
+    (no FUENI header/sidebar, no French copy, no link home) - inconsistent with the rest of the
+    branded French UI. Low-severity finding, not blocking - see `test-results/Report.md`.

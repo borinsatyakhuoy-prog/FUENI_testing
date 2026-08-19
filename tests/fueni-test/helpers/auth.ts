@@ -12,6 +12,22 @@ export function requireCredentials() {
 }
 
 /**
+ * Confirmed live 2026-08-18: the shared test account's verified phone number
+ * also logs in successfully (AC1's "or phone/password" path), previously
+ * untested. Kept as a separate env var since not every test needs it.
+ */
+export function requirePhoneCredentials() {
+  const nationalNumber = process.env.FUENI_PHONE_NATIONAL;
+  const { password } = requireCredentials();
+  if (!nationalNumber) {
+    throw new Error(
+      'FUENI_PHONE_NATIONAL must be set in a local .env file to test phone/password login (see .env.example).'
+    );
+  }
+  return { nationalNumber, password };
+}
+
+/**
  * The login form defaults to the "Téléphone" tab, not "E-mail" - must switch
  * tabs explicitly before the email/password fields exist in the DOM.
  */
