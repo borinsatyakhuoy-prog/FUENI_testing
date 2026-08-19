@@ -25,6 +25,48 @@ Two related symptoms observed so far, both attributable to this:
    same time. This suggests Cloudflare's anti-automation posture can widen beyond the
    specifically-gated flows once a fingerprint is flagged heavily enough.
 
+## Sitekey diagnostic (2026-08-19)
+
+Checked whether staging might already be using one of Cloudflare's published test/sandbox
+sitekeys by mistake (which would mean this ticket is moot). Confirmed it is **not**: driving a
+fresh doctor registration attempt through to step 3 and inspecting the actual network request to
+`challenges.cloudflare.com`, the widget's sitekey is `0x4AAAAAADhOODqZb40ZZn36` - a real
+production-style Turnstile sitekey, not one of Cloudflare's documented always-pass/always-block/
+force-interactive test keys (those follow a distinct `1x0000...`/`2x0000...`/`3x0000...` pattern,
+see the testing docs link above). So the ask below is a genuine, necessary configuration change,
+not something already half-solved. (Same live attempt reconfirmed the challenge never clears -
+screenshot at `test-results/screenshots/doctor-registration-turnstile-stuck.png`.)
+
+## Ready-to-send request (draft - fill in the recipient)
+
+> Subject: Cloudflare Turnstile test key for FUENI staging QA automation
+>
+> Hi team,
+>
+> QA automation (Playwright-driven) is structurally blocked by the live Cloudflare Turnstile
+> challenge on both staging apps - specifically the patient forgot-password wizard, patient
+> registration step 3, and the doctor registration step-3 email verification. This is expected,
+> correct behavior for real traffic; Turnstile is designed to detect exactly this kind of
+> automated session, and it does so reliably regardless of whether a human or a script performs
+> the click.
+>
+> Could we get one of the following for the staging environment(s) used by QA automation only
+> (production keeps the real key)?
+>
+> 1. One of Cloudflare's own published test-mode Turnstile sitekeys
+>    (https://developers.cloudflare.com/turnstile/troubleshooting/testing/), swapped in behind an
+>    env flag for staging, or
+> 2. An IP allowlist / dedicated bypass header-cookie for the automation's known source in the
+>    Cloudflare zone's Turnstile/WAF configuration.
+>
+> Currently confirmed staging sitekey (doctor registration): `0x4AAAAAADhOODqZb40ZZn36` - this
+> is a real key, not already a sandbox one, so this needs an actual config change on your end
+> rather than anything fixable from the test-automation side.
+>
+> This unblocks full CI coverage of the patient forgot-password/registration flows and is a hard
+> prerequisite for building any automated doctor-role test suite at all (see
+> `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`).
+
 ## Why this matters
 
 As this suite grows (and as a doctor-role suite gets built), more of it will be

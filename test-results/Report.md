@@ -3,7 +3,8 @@
 **Date:** 2026-08-17 (original pass), updated 2026-08-18 (Session 2 - additional exploratory
 testing and defects), updated 2026-08-19 (Session 3 - page-load performance/SLA testing; Session 4
 - OWASP-aligned security pass; Session 5 - first authenticated doctor-role exploration and a
-cross-role responsive-viewport pass)
+cross-role responsive-viewport pass; Session 6 - Turnstile sitekey diagnostic and a 320px/
+small-component responsive pass)
 **Environment:** `https://fueni-staging-preview-patient.allweb.cloud` (new staging), cross-checked
 against `https://fueni-staging-patient.allweb.cloud` (old stable); Session 5 additionally covers
 `https://fueni-staging-preview-pro.allweb.cloud` (doctor/"Espace professionnel")
@@ -24,7 +25,7 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Blocked by an external anti-automation control (Cloudflare Turnstile) | 2 |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
   targeted pass over previously-untested AC paths and top-bar controls |
-| Bugs/findings logged | 7 confirmed defects (see `defects/README.md` for the full index across
+| Bugs/findings logged | 9 confirmed defects (see `defects/README.md` for the full index across
   patient, doctor, and cross-cutting/Keycloak scope) + 1 doc/AC correction + 1 environmental/
   CI-reliability limitation (Issue 3) logged in this report's own Defects Log below |
 
@@ -235,6 +236,25 @@ escalation set in.
 - **Evidence/Recommendation:** full write-up at
   `defects/responsive-tablet-empty-whitespace/README.md`.
 
+### Issue 8 - Login phone-number placeholder clips mid-word at 320px, both roles (new, Session 6, 2026-08-19)
+- **Severity:** Low (cosmetic only - the field is fully usable, placeholder disappears on typing).
+- **Description:** the shared login component's phone-number input placeholder ("Numéro de
+  téléphone") renders clipped ("Numéro de télépl") with no ellipsis at 320px width on both roles;
+  confirmed fine at 375px+. Same shared component as Issue 7, now confirmed to have more than one
+  un-tuned narrow breakpoint.
+- **Evidence/Recommendation:** full write-up at
+  `defects/login-phone-placeholder-clipped-320/README.md`.
+
+### Issue 9 - "Connexion & Sécurité" page forces ~26px of real horizontal scroll at 320px (new, Session 6, 2026-08-19)
+- **Severity:** Low (page remains usable once scrolled to, but this is a more disruptive bug class
+  than Issues 7/8 - it's genuine document-level horizontal scroll, not just wasted/clipped space).
+- **Description:** the "Mot de passe" row (label + dots + "Changer" button) is a non-wrapping flex
+  row that overflows its container at 320px width, forcing the whole page to scroll sideways.
+  Confirmed fine at 375px+. Patient app only checked this pass; doctor equivalent page currently
+  unreachable (see Issue 6's ticket).
+- **Evidence/Recommendation:** full write-up at
+  `defects/security-page-horizontal-overflow-320/README.md`.
+
 ### Finding - Unknown-route 404 page is generic and unbranded (new, 2026-08-18)
 - **Severity:** Low (cosmetic/consistency only - the 404 itself works correctly: real HTTP 404,
   no crash, no redirect loop).
@@ -355,7 +375,30 @@ responded correctly at both widths - no other responsive defects found. A suspec
 mobile overlap was investigated and ruled out (screenshot-stitching artifact + boundary scroll
 position, not a real blocking issue).
 
-## 8. Summary and Recommendations
+## 8. Turnstile Diagnostic & 320px Responsive Pass (Session 6, 2026-08-19)
+
+**Turnstile sitekey diagnostic:** confirmed via a live network inspection during a fresh (throwaway)
+doctor registration attempt that the staging sitekey (`0x4AAAAAADhOODqZb40ZZn36`) is a real
+production-style key, not one of Cloudflare's test/sandbox keys - the test-key ask in
+`tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request` (now with a ready-to-send request drafted) is a
+genuine, necessary infra change, not something already solvable from the test side. No bypass of
+the anti-bot control was attempted.
+
+**Doctor-account credential gap found:** the Session 5 durable doctor account (`FUENI_PRO_EMAIL`)
+is now itself unreachable - its mandatory login OTP can't be read because the temp-mail inbox's
+own login password was never persisted to `.env`, only its address. Combined with the ad-hoc
+KYC-approved account no longer being available, doctor-role login/registration is fully blocked
+via every credential currently held by this suite - see
+`tickets/DOCTOR-ROLE-registration-blocked-by-turnstile` for the fix (persist the temp-mail
+password too, next time an account is provisioned) and next steps.
+
+**320px + small-component responsive pass, both roles:** extended Session 5's 375px/768px pass
+with the narrowest common device width and a closer look at small components rather than only
+full-page layout. Two new defects found (Issues 8-9 above), both specific to 320px and confirmed
+absent at 375px. Everything else checked - patient dashboard top-bar icons, Mon profil, both
+roles' registration wizards - was clean at 320px.
+
+## 9. Summary and Recommendations
 
 1. **Ship-readiness of what exists today:** authentication and account/profile management are
    solid and well-covered, including both login identifier paths (e-mail and phone), session

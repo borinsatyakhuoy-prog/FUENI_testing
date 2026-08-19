@@ -403,3 +403,59 @@ column, no overlap or cut-off content found. One suspected mobile overlap (KYC f
 "Submit"/"Save" footer appearing to cover the City field) was investigated and ruled out - it
 was a `fullPage` screenshot stitching artifact plus a boundary scroll position, not a real
 blocking defect; scrolling further reveals the field fully, confirmed live.
+
+---
+
+# Session 6 (2026-08-19) - Turnstile diagnostic, doctor-account credential gap, 320px pass
+
+**Goal:** follow up on two open threads from Session 5 - (1) try to unblock doctor-role
+registration/login, (2) extend the responsive pass with a narrower 320px viewport and a look at
+small UI components specifically, not just full-page layout.
+
+## Turnstile diagnostic - confirmed staging is not accidentally using a test key
+
+Drove a fresh (throwaway, temp-mail-backed) doctor registration attempt through to step 3 and
+inspected the live network request to `challenges.cloudflare.com`: the widget's sitekey is
+`0x4AAAAAADhOODqZb40ZZn36` - a real production-style Turnstile key, not one of Cloudflare's
+published test/sandbox keys. So the existing recommendation (ask FUENI/infra for a test key or IP
+allowlist) is a genuine, necessary ask, not something already half-solved from this side.
+`tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request` now has a ready-to-send request drafted, and
+evidence of the still-stuck challenge is at
+`test-results/screenshots/doctor-registration-turnstile-stuck.png`. No technical bypass of the
+anti-bot control itself was attempted - that's a legitimate Cloudflare-configuration ask, not
+something scriptable from the test-automation side.
+
+## New blocker - the Session 5 doctor account is now also unreachable
+
+Attempted to log into `FUENI_PRO_EMAIL` (the durable account from Session 5) to check whether its
+KYC had been approved since. Login correctly reached the mandatory email-OTP step, but reading
+that OTP requires the temp-mail inbox's *own* login password - which was never saved anywhere
+(`.env` only stored the FUENI app password). Without it, the OTP can't be read, so this account is
+now stuck too. The ad-hoc KYC-approved account from Session 5 is also no longer available (per the
+user, 2026-08-19). Full detail and the fix for next time (persist the temp-mail password too, not
+just the address) is in `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`.
+
+**Net effect:** doctor-role login/registration remains fully blocked via every credential
+currently available to this suite.
+
+## Responsive pass - 320px viewport + small components, both roles
+
+Extended the 375px/768px pass with the narrowest common real device width (320px, e.g. iPhone
+SE/5/original SE) and looked specifically at small components (form-input placeholders, icon
+buttons, touch-target sizing) rather than only full-page layout. Two new defects found, both
+specific to 320px (confirmed absent at 375px):
+
+- **`defects/login-phone-placeholder-clipped-320`** - the shared login component's phone-number
+  input placeholder clips mid-word ("Numéro de télépl") at 320px on both roles - the same
+  component already known to waste space at 768px (`defects/responsive-tablet-empty-whitespace`),
+  now confirmed to have more than one un-tuned breakpoint.
+- **`defects/security-page-horizontal-overflow-320`** - the patient "Connexion & Sécurité" page's
+  "Mot de passe" row (label + dots + "Changer" button, a `flex` row with no wrap) forces ~26px of
+  genuine horizontal page scroll at 320px - a more disruptive class of bug than the
+  wasted-space-only tablet finding, since it makes the whole page scroll sideways.
+
+Everything else checked at 320px was clean: patient dashboard (top-bar icons, greeting card,
+"Prendre un RDV" button all reflow correctly, no overlap), Mon profil, and both roles'
+registration wizards (no horizontal overflow on any of them). Notifications-bell touch target
+measured 36x36 CSS px - below the AAA 44x44 guideline but comfortably above the WCAG AA minimum
+(24x24), so not written up as a defect.

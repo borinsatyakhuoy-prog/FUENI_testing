@@ -6,7 +6,8 @@ Each defect gets its own folder (`defects/<short-name>/README.md`) following a
 Description / Steps to Reproduce (or Description) / Expected / Actual / Evidence template. This
 index is kept up to date as defects are added.
 
-Gitignored (matching `tickets/`'s convention) - local-only, not pushed.
+Tracked in git alongside `tickets/` (see history - both were briefly gitignored early on, now
+committed so findings survive across machines/sessions).
 
 ## Index
 
@@ -19,6 +20,8 @@ Gitignored (matching `tickets/`'s convention) - local-only, not pushed.
 | [doctor-country-not-listed-untranslated-english](doctor-country-not-listed-untranslated-english/README.md) | Doctor | Low | Confirmed, reproduced (no doctor-role automated suite yet) | "Country not listed" waitlist panel's body text is untranslated English on an otherwise French page |
 | [keycloak-userinfo-cors-misconfiguration](keycloak-userinfo-cors-misconfiguration/README.md) | Patient (Keycloak) | Low | Confirmed via real cross-origin browser fetch, not yet automated | `userinfo` endpoint reflects any Origin + allows credentials with no allowlist; not currently chainable into data leakage since this endpoint requires Bearer auth, but the policy itself is unscoped |
 | [responsive-tablet-empty-whitespace](responsive-tablet-empty-whitespace/README.md) | Both (shared login template) | Low | Confirmed, reproduced on both roles, not yet automated | Login page wastes ~235px of empty vertical space at 768px tablet width; form not recentered either. Registration wizards on both roles are unaffected |
+| [login-phone-placeholder-clipped-320](login-phone-placeholder-clipped-320/README.md) | Both (shared login template) | Low | Confirmed, reproduced on both roles, not yet automated | Phone-number input's placeholder text clips mid-word ("Numéro de télépl") at 320px width; fine at 375px+ |
+| [security-page-horizontal-overflow-320](security-page-horizontal-overflow-320/README.md) | Patient | Low | Confirmed, not yet automated (doctor equivalent not checked - authenticated doctor pages currently unreachable) | "Connexion & Sécurité" page's "Mot de passe" row forces ~26px of real horizontal page scroll at 320px width; fine at 375px+ |
 
 Additional low-severity findings not written up as their own defect folder (documentation/AC
 corrections, environmental limitations, informational notes) are tracked inline in

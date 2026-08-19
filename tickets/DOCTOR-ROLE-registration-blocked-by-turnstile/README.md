@@ -1,8 +1,10 @@
 # Ticket: Doctor-role automated test suite is blocked at account creation (Turnstile + manual KYC)
 
-**Verdict:** Open - blocked on either the Cloudflare test-key ask (see
-`tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`) or a durable, pre-provisioned doctor test
-account being supplied.
+**Verdict:** Open, and as of 2026-08-19 more blocked than before - the durable Session 5 account is
+now also stuck at OTP (its temp-mail login password was never persisted; see below), and the
+ad-hoc KYC-approved account is no longer available. Blocked on either the Cloudflare test-key ask
+(see `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`) or someone with Keycloak/database access
+resetting 2FA or re-provisioning a reachable account.
 
 ## Summary
 
@@ -40,6 +42,34 @@ Either of these unblocks a real doctor-role suite:
 - **Or** resolve the Cloudflare test-key ask first (see the linked ticket) so Claude can complete
   a fresh self-registration end-to-end using its own temp-mail inbox, independent of any account
   someone else has to hand-provision.
+
+## New blocker found (2026-08-19, second look) - the Session 5 self-service account's own OTP mailbox is now unreachable too
+
+Attempted to log into `FUENI_PRO_EMAIL` (the durable, temp-mail-controlled account created in
+Session 5) to check whether its KYC has since been approved. Login correctly reached the
+mandatory email-OTP step, but reading that OTP requires logging into the temp-mail provider
+itself with **that mailbox's own password** - which was never persisted anywhere (`.env` only
+ever stored the FUENI app password, not the temp-mail inbox's login password). Without it, the
+inbox can't be re-authenticated into from a fresh session, so the OTP can't be read and this
+account is now just as unreachable as the old ad-hoc one, despite being "temp-mail-controlled."
+The ad-hoc KYC-approved account from the original write-up below is also no longer available
+(confirmed with the user, 2026-08-19).
+
+**Root cause:** "reachable via temp-mail" was necessary but not sufficient - it also needs the
+temp-mail account's own credentials saved durably, not just its address. `create_one_account`
+returns both an address and a password; only the address made it into `.env`.
+
+**Fix for next time a doctor account is (re-)provisioned:** persist both the FUENI app password
+**and** the temp-mail inbox's own password (e.g. `FUENI_PRO_EMAIL_TEMPMAIL_PASSWORD`) in `.env`,
+so any future session can call the temp-mail MCP's `login` tool directly instead of assuming a
+prior session's in-memory login carries over.
+
+**Net effect, updated:** doctor-role login is unreachable via every credential currently in this
+project (the durable Session 5 account is now stuck at OTP; the ad-hoc KYC-approved account is
+gone; fresh self-registration is still Turnstile-blocked - see the sitekey diagnostic in
+`tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`). Unblocking this now needs either the infra
+ask above, or asking whoever has console/database access to the FUENI staging Keycloak realm to
+manually clear/reset the 2FA requirement or re-send a readable OTP for `FUENI_PRO_EMAIL`.
 
 ## Current doctor-role coverage (as of 2026-08-19)
 
