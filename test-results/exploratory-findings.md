@@ -333,3 +333,73 @@ same auth domain would be immediately exploitable by the same gap.
   test relying on this account) or further Cloudflare escalation on top of what's already
   documented in Issue 3. Recommend testing this only against a dedicated, disposable account if
   ever prioritized.
+
+---
+
+# Session 5 (2026-08-19) - First authenticated doctor-role exploration + responsive pass
+
+**Goal:** get past the doctor-role blocker (see `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`)
+using a jointly-created account, explore the authenticated doctor area and KYC flow for the first
+time, then run a responsive-viewport pass across both roles.
+
+## Milestone - a durable, fully self-service doctor test account now exists
+
+Registration itself still needs a human to clear Turnstile (confirmed again live - even a manual
+click inside this session's automated browser window failed, same as before), but once an
+account exists, this session confirmed **all future logins can be handled by Claude alone**:
+using a `temp-mail`-MCP-controlled inbox (`FUENI_PRO_EMAIL`/`FUENI_PRO_PASSWORD`, now in `.env`),
+Claude can read both the registration verification code and the mandatory login email-OTP
+without any human relay. The "remember this device for 30 days" checkbox was also checked during
+this session's login, confirmed live to skip the OTP step entirely on the next login from the
+same browser context.
+
+## First look at the authenticated doctor dashboard
+
+Confirmed live: after login, a new (KYC-not-yet-submitted) doctor account lands on `/en/dashboard`
+with a blocking "Finish your verification" dialog ("Your account is created. Complete your KYC
+file to activate your practitioner space.") and a sidebar where Patients/Schedule/Medical records
+are disabled until KYC is complete. Dashboard shows a greeting, 4 stat cards (all zero), and two
+empty-state sections (Today's schedule, Recent patients) - structurally very similar to the
+patient dashboard's empty states.
+
+## KYC ("Verification file") form - thorough, no defects found in validation
+
+Deliberately explored the form's validation/UI behavior only, without submitting real-looking
+fake credentials - the form explicitly states "Our team reviews your file within 2 business days
+and notifies you by e-mail," meaning submitted data would consume a real human reviewer's time,
+unlike testing a fully-automated flow. Confirmed live:
+- Every required field (Medical specialty, Medical board number, National ID, Region, City,
+  Practice address, the one Required upload) shows a correct, specific validation message on an
+  empty submit.
+- Medical specialty offers ~38 real specialties (Cardiology, General Practice, etc.).
+- Region/City correctly cascade from the country chosen back at registration step 1 (confirmed:
+  this account's Burkina Faso choice produced Burkina Faso's real provinces in the Region list).
+- File-type validation works: uploading a `.txt` file was correctly rejected ("Invalid file: PDF,
+  JPEG or PNG, 5 MB max.").
+- Minor wording nitpick, not written up as its own defect: the Medical board number field's empty
+  submit shows a format-validation message ("Invalid board number...") rather than "This field is
+  required." like every other empty field - inconsistent phrasing, no functional impact.
+
+## Issue 6 (new) - authenticated doctor app defaults to English despite an all-French session
+
+The entire authenticated doctor area (dashboard, KYC page, sidebar labels, greeting) rendered in
+English by default, even though registration and login were both conducted with `kc_locale=fr`
+throughout. This is a broader instance of the same class of bug already known from patient
+registration step 2 ("Langue du compte" defaulting to English) - here it affects the whole
+authenticated app, not just one form field. Not yet written up as its own `defects/` entry pending
+confirmation of whether this is role-specific or would also reproduce on a from-scratch patient
+account (patient's authenticated area was already confirmed to correctly stay in French
+throughout every prior session, so this does appear doctor-specific).
+
+## Responsive viewport pass (375px mobile, 768px tablet) across both roles
+
+See `defects/responsive-tablet-empty-whitespace/README.md` for the one confirmed defect found:
+both roles' login pages waste ~235px of empty space at 768px tablet width, with the form left-
+aligned rather than recentered. Reproduced identically on patient and doctor login (shared
+component). Registration wizards on both roles, and all authenticated sidebar-layout pages
+checked (patient dashboard/profile/security), responded correctly at both widths - sidebar
+correctly collapses to a working hamburger-toggle drawer on mobile, content reflows to single
+column, no overlap or cut-off content found. One suspected mobile overlap (KYC form's sticky
+"Submit"/"Save" footer appearing to cover the City field) was investigated and ruled out - it
+was a `fullPage` screenshot stitching artifact plus a boundary scroll position, not a real
+blocking defect; scrolling further reveals the field fully, confirmed live.

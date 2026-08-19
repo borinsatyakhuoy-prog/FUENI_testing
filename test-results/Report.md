@@ -1,11 +1,17 @@
 # FUENI (Patient) - Test Execution Report
 
 **Date:** 2026-08-17 (original pass), updated 2026-08-18 (Session 2 - additional exploratory
-testing and defects), updated 2026-08-19 (Session 3 - page-load performance/SLA testing)
+testing and defects), updated 2026-08-19 (Session 3 - page-load performance/SLA testing; Session 4
+- OWASP-aligned security pass; Session 5 - first authenticated doctor-role exploration and a
+cross-role responsive-viewport pass)
 **Environment:** `https://fueni-staging-preview-patient.allweb.cloud` (new staging), cross-checked
-against `https://fueni-staging-patient.allweb.cloud` (old stable)
-**Scope:** Patient role only, per `user-stories/SCRUM.md`. Project is at sprint SCRUM-10 - several
-nav destinations are intentionally unfinished placeholders, not defects (see below).
+against `https://fueni-staging-patient.allweb.cloud` (old stable); Session 5 additionally covers
+`https://fueni-staging-preview-pro.allweb.cloud` (doctor/"Espace professionnel")
+**Scope:** Primarily patient role, per `user-stories/SCRUM.md`. Project is at sprint SCRUM-10 -
+several nav destinations are intentionally unfinished placeholders, not defects (see below).
+Sessions 4-5 also cover some cross-cutting/doctor-role findings (security, doctor-role
+exploration) - these are exploratory only, not yet backed by an automated doctor-role suite (see
+`tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`).
 
 ## 1. Executive Summary
 
@@ -18,8 +24,9 @@ nav destinations are intentionally unfinished placeholders, not defects (see bel
 | Blocked by an external anti-automation control (Cloudflare Turnstile) | 2 |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
   targeted pass over previously-untested AC paths and top-bar controls |
-| Bugs/findings logged | 6 (2 product defects, 1 doc/AC correction, 1 UX finding surfaced during
-  healing, 1 environmental/CI-reliability limitation, 1 low-severity UI-consistency finding) |
+| Bugs/findings logged | 7 confirmed defects (see `defects/README.md` for the full index across
+  patient, doctor, and cross-cutting/Keycloak scope) + 1 doc/AC correction + 1 environmental/
+  CI-reliability limitation (Issue 3) logged in this report's own Defects Log below |
 
 **Overall assessment:** everything currently built in the patient app (authentication, dashboard,
 navigation, Mon profil, Connexion & Sécurité, and registration through the point where it
@@ -202,6 +209,32 @@ escalation set in.
   destinations are already handled) until it's ready - a silently-dead interactive control is a
   worse UX than an honestly-labeled placeholder.
 
+### Issue 5 - Keycloak `userinfo` endpoint has a permissive CORS policy (new, Session 4, 2026-08-19)
+- **Severity:** Low (confirmed real via a live cross-origin browser fetch, but not currently
+  chainable into data leakage - see full write-up for why).
+- **Description:** the endpoint reflects any `Origin` (including a fabricated, never-registered
+  one) alongside `Access-Control-Allow-Credentials: true` - no origin allowlist at all.
+- **Evidence/Recommendation:** full write-up at
+  `defects/keycloak-userinfo-cors-misconfiguration/README.md`.
+
+### Issue 6 - Authenticated doctor app defaults to English despite an all-French session (new, Session 5, 2026-08-19)
+- **Severity:** Low (cosmetic/i18n only - no functional impact).
+- **Description:** the whole authenticated doctor area (dashboard, KYC page, sidebar) renders in
+  English by default even though registration/login were conducted with `kc_locale=fr`
+  throughout - a broader instance of the already-known patient-registration locale-default bug.
+  Appears doctor-specific.
+- **Evidence:** `test-results/exploratory-findings.md` (Session 5).
+- **Recommendation:** ensure the authenticated app honors the session's chosen locale rather than
+  falling back to a hardcoded English default.
+
+### Issue 7 - Login page wastes ~235px of empty space at 768px tablet width, both roles (new, Session 5, 2026-08-19)
+- **Severity:** Low (cosmetic only - form remains fully usable).
+- **Description:** the shared login-page component doesn't recenter/resize its content when the
+  marketing panel hides at tablet width, unlike the clean mobile layout. Reproduced identically
+  on patient and doctor login.
+- **Evidence/Recommendation:** full write-up at
+  `defects/responsive-tablet-empty-whitespace/README.md`.
+
 ### Finding - Unknown-route 404 page is generic and unbranded (new, 2026-08-18)
 - **Severity:** Low (cosmetic/consistency only - the 404 itself works correctly: real HTTP 404,
   no crash, no redirect loop).
@@ -286,7 +319,43 @@ per-page distribution (min/P50/P90/P95/P99/max for TTFB, DOM Content Loaded, FCP
 load) is in `test-results/performance-report.md`; raw numbers for future trend comparison are in
 `test-results/performance-results.json`.
 
-## 7. Summary and Recommendations
+## 7. Doctor-Role Exploration & Cross-Role Responsive Testing (Session 5, 2026-08-19)
+
+**Scope note:** exploratory only - no automated doctor-role test suite exists yet (blocked on
+Turnstile/account-provisioning, see `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`).
+Findings below are manual, live-verified, and written up in full in
+`test-results/exploratory-findings.md` (Session 5) and `defects/`.
+
+**Milestone:** a durable, fully self-service doctor test account now exists
+(`FUENI_PRO_EMAIL`/`FUENI_PRO_PASSWORD` in `.env`), using a `temp-mail`-MCP-controlled inbox so
+Claude can read every login OTP unattended going forward - registration itself still needs a
+human to clear Turnstile, but every subsequent login does not.
+
+**First look at the authenticated doctor dashboard:** a new (KYC-pending) account lands on a
+dashboard with a blocking "Finish your verification" dialog, a partially-disabled sidebar
+(Patients/Schedule/Medical records locked until KYC), and empty-state cards structurally similar
+to the patient dashboard.
+
+**KYC ("Verification file") form:** thoroughly validated (deliberately without submitting fake
+credentials, since a real FUENI team member reviews submissions) - required-field validation,
+Region/City cascading from the registration-time country choice, and file-type/size upload
+validation all work correctly. No defects found in this form's validation behavior.
+
+**Issue 6 (new)** - the entire authenticated doctor app defaults to **English** despite an
+all-French registration/login session (`kc_locale=fr` throughout) - a broader instance of the
+already-known "Langue du compte defaults to English" pattern from patient registration, but here
+affecting the whole app rather than one field. Appears doctor-specific - the patient app's
+authenticated area has consistently stayed correctly in French across every prior session.
+
+**Responsive viewport pass (375px mobile, 768px tablet), both roles:** see
+`defects/responsive-tablet-empty-whitespace/README.md` for the one confirmed defect - both
+roles' login pages (shared component) waste ~235px of empty space at 768px tablet width.
+Registration wizards (both roles) and all authenticated sidebar-layout patient pages checked
+responded correctly at both widths - no other responsive defects found. A suspected KYC-form
+mobile overlap was investigated and ruled out (screenshot-stitching artifact + boundary scroll
+position, not a real blocking issue).
+
+## 8. Summary and Recommendations
 
 1. **Ship-readiness of what exists today:** authentication and account/profile management are
    solid and well-covered, including both login identifier paths (e-mail and phone), session
@@ -314,3 +383,12 @@ load) is in `test-results/performance-report.md`; raw numbers for future trend c
    baseline (§6), not a one-time pass; re-running it after significant feature work or before a
    production push would catch a regression before users do. `performance-results.json` is
    already in a shape that a future run could diff against.
+10. **Build a real automated doctor-role suite** (Session 5, §7) - blocked today on
+    `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`, but a durable self-service test
+    account now exists; worth prioritizing once the Turnstile/account-provisioning question is
+    resolved, since the doctor role currently has zero automated coverage.
+11. **Fix Issue 6** (doctor app defaults to English) and **Issue 7** (768px tablet layout gap,
+    both roles) - both low severity, both cheap, both cosmetic-only.
+12. **Fix Issue 5** (Keycloak `userinfo` CORS misconfiguration) - low priority given it isn't
+    currently chainable into a leak, but worth closing before any endpoint on that domain adds
+    cookie-based auth.
