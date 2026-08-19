@@ -18,9 +18,9 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 
 | Metric | Count |
 |---|---|
-| Test cases planned (manual + automated) | 42 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 42 (32 original + 9 added in Session 2 + 1 performance suite in Session 3) |
-| Passing reliably | 38 (90.5%) |
+| Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
+| Automated test cases executed | 56 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6) |
+| Passing reliably | 52 (92.9%) |
 | Failing by design (documents a real, open defect) | 2 |
 | Blocked by an external anti-automation control (Cloudflare Turnstile) | 2 |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
@@ -67,7 +67,7 @@ See `test-results/exploratory-findings.md` for the full write-up. Summary:
 
 ## 3. Automated Test Results
 
-**Suite:** `tests/fueni-test/` (33 files, 42 test cases), Playwright, chromium project.
+**Suite:** `tests/fueni-test/` (45 files, 56 test cases), Playwright, chromium project.
 
 ### Original suite (2026-08-17), unchanged
 
@@ -108,11 +108,41 @@ Testing below and `specs/planner/08-performance.md` §8 for full detail:
 | `performance/001_page-load-sla.spec.ts` | 1 | Passing - all 4 measured pages meet the P90 load-time SLA |
 | **Subtotal** | **1** | **1 passing** |
 
+### Session 6 (2026-08-19) additions - non-happy-path coverage
+
+Twelve new files (14 test cases), all negative-path/edge-case coverage added in direct response
+to a request for "more test cases, not just happy path" - every one live-verified against the
+real app first (real error message text, real button-disabled states, or real reverted values)
+before being written, per this suite's existing convention:
+
+| File | Tests | Result |
+|---|---|---|
+| `auth/012_login-malformed-email.spec.ts` | 1 | Passing - client-side "Adresse e-mail invalide." error, distinct from the generic bad-credentials message |
+| `auth/013_login-invalid-phone-format.spec.ts` | 1 | Passing - client-side "Numéro de téléphone invalide." error |
+| `auth/014_forgot-password-wrong-otp.spec.ts` | 1 | Passing - a wrong OTP is rejected with a specific, attempt-counted error ("Il vous reste N tentative(s)."); only one wrong guess submitted to avoid burning the shared account's remaining attempts |
+| `registration/003_step1-invalid-email-format.spec.ts` | 1 | Passing - same client-side format check as login |
+| `registration/004_step1-duplicate-phone-rejected.spec.ts` | 1 | Passing - real backend "déjà enregistré" duplicate-phone check, using the shared account's own verified number for a deterministic result |
+| `registration/005_step1-duplicate-email-rejected.spec.ts` | 1 | Passing - same duplicate check, e-mail path |
+| `profile/006_location-cancel-discards-edits.spec.ts` | 1 | Passing - confirms Annuler genuinely discards a typed change (reopens the dialog and checks the original value survived), not just hides the form |
+| `profile/007_emergency-contact-cancel-discards-edits.spec.ts` | 1 | Passing - same check, the other edit dialog |
+| `security/006_contact-email-invalid-format.spec.ts` | 1 | Passing - e-mail format is rejected before the "confirm your current password" re-auth step even appears |
+| `security/007_change-password-strength-meter.spec.ts` | 2 | Passing - live strength meter (same as registration's); Enregistrer confirmed to stay disabled while "Mot de passe actuel" is empty, regardless of new-password strength |
+| `navigation/007_route-variants-redirect-when-unauthenticated.spec.ts` | 2 | Passing - trailing-slash and query-param route variants still redirect when logged out |
+| `navigation/008_back-forward-preserves-authenticated-state.spec.ts` | 1 | Passing - ordinary back/forward across authenticated pages (distinct from the after-logout case in `auth/010`) renders correctly at every step |
+| **Subtotal** | **14** | **14 passing** |
+
+**Real-data-safety note:** two originally-planned additions were deliberately dropped rather than
+implemented unsafely - a submit-based validation test for the profile "Contact d'urgence"/
+"Localisation & langue" dialogs, and for the security "Coordonnées & connexion" phone-number
+edit. Both would have required clicking `Enregistrer` on the shared account with no way to
+confirm in advance that invalid data would be rejected rather than silently persisted. The safer,
+equally-valuable alternative shipped instead (confirming Annuler truly discards edits).
+
 ### Combined total
 
 | | Files | Tests | Passing | Failing-by-design | Blocked (Turnstile) |
 |---|---|---|---|---|---|
-| **Total** | **33** | **42** | **38 (90.5%)** | **2** | **2** |
+| **Total** | **45** | **56** | **52 (92.9%)** | **2** | **2** |
 
 ### Healing activities performed
 

@@ -75,3 +75,25 @@
   - Confirmed live 2026-08-18: the 404 page itself is a generic, unbranded, English-only default
     (no FUENI header/sidebar, no French copy, no link home) - inconsistent with the rest of the
     branded French UI. Low-severity finding, not blocking - see `test-results/Report.md`.
+
+#### 3.7. Protected-route URL variants (trailing slash, query params) still redirect when logged out
+
+**File:** `tests/fueni-test/navigation/007_route-variants-redirect-when-unauthenticated.spec.ts`
+
+**Steps:**
+  1. Without logging in, navigate to `/fr/dashboard/` (trailing slash) and separately to
+     `/fr/my-profile?foo=bar&x=1` (query params)
+    - expect: Both redirect to login, same as the bare-path case in 3.4
+  - Confirmed live 2026-08-19. No defect found.
+
+#### 3.8. Ordinary browser back/forward across authenticated pages renders correctly at every step
+
+**File:** `tests/fueni-test/navigation/008_back-forward-preserves-authenticated-state.spec.ts`
+
+**Steps:**
+  1. Log in, visit `/fr/my-profile` then `/fr/security`
+  2. Go back twice, then forward twice
+    - expect: Each step lands on the correct URL with the correct page content rendered (not
+      blank, not an error, not bounced to login) - distinct from auth 1.10, which covers the
+      after-logout case specifically
+  - Confirmed live 2026-08-19. No defect found.

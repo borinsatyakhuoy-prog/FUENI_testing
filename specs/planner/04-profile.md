@@ -80,3 +80,21 @@ validating the form and clicking "Annuler" - they must not click "Enregistrer".
   - Confirmed live 2026-08-18, resolving 4.4's deferred question: this is safe to automate for
     real. No defect found; occasionally flaky on the first PUT response in CI (self-heals via
     the suite's global `retries: 2`) - see `test-results/Report.md`.
+
+#### 4.6. Cancelling an edit dialog genuinely discards the typed change
+
+**Files:** `tests/fueni-test/profile/006_location-cancel-discards-edits.spec.ts`,
+`tests/fueni-test/profile/007_emergency-contact-cancel-discards-edits.spec.ts`
+
+**Steps:**
+  1. Open "Modifier" on "Localisation & langue" (or "Contact d'urgence"), type a new value into
+     a field, then click "Annuler"
+  2. Reopen the same "Modifier" dialog
+    - expect: The field shows its original value, not the typed one
+  - Confirmed live 2026-08-19: goes beyond 4.2/4.3 (which only check the dialog closes) to prove
+    Annuler isn't just hiding the form with the edit still cached client-side. No defect found.
+  - **Real-data-safety note:** a submit-based validation test (e.g. an invalid phone format,
+    asserting a rejection message) was deliberately not added for these dialogs - there's no way
+    to confirm in advance that `Enregistrer` would reject bad data rather than silently persist
+    it to the shared account, and this suite never clicks Enregistrer here. See
+    `test-results/Report.md` Session 6 for the same call made on the security page's edit forms.

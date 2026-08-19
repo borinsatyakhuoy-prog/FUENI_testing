@@ -71,3 +71,28 @@ test below except 5.4 (GDPR export) stops at validating the dialog and Cancels -
   1. Under "Mon compte & mes données", inspect the "Supprimer mon compte" area
     - expect: No in-app delete button/flow is present - only explanatory text plus a
       `mailto:support@fueni.com?subject=Suppression de mon compte FUENI` link
+
+#### 5.6. Modifier (e-mail) rejects a malformed address before the re-auth step
+
+**File:** `tests/fueni-test/security/006_contact-email-invalid-format.spec.ts`
+
+**Steps:**
+  1. Open "Modifier" on "Adresse e-mail", type `not-an-email`, then click "Enregistrer"
+    - expect: "Saisissez une adresse e-mail valide." shown inline; still in edit mode (Annuler
+      still visible) - confirmed the app never reaches the "confirm your current password"
+      re-auth step this page's own copy warns about, so this is safe to actually submit
+  - Confirmed live 2026-08-19. No defect found.
+
+#### 5.7. Changer (password) - live strength meter, and Enregistrer gated on the current password
+
+**File:** `tests/fueni-test/security/007_change-password-strength-meter.spec.ts`
+
+**Steps:**
+  1. Open "Changer" (password), type a weak value into "Nouveau mot de passe"
+    - expect: Progressbar reads "Faible" - then "Très fort" for a strong value, same meter as
+      registration
+  2. With a strong "Nouveau mot de passe" but "Mot de passe actuel" left empty
+    - expect: "Enregistrer" stays disabled regardless of the new password's own validity
+  - Confirmed live 2026-08-19. "Mot de passe actuel" is never filled in either test - that's the
+    field that actually gates the real write, so leaving it empty keeps this fully safe against
+    the shared account. No defect found.

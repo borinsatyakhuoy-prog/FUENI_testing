@@ -79,3 +79,29 @@ phone number entered in step 1. Since this suite has no SMS-receiving capability
 dedicated test phone number becomes available, extend 6.2 to enter the received code and assert
 the new account can subsequently log in - until then, this is documented as a known gap rather
 than left unautomated silently.
+
+#### 6.4. Step 1 rejects a malformed e-mail
+
+**File:** `tests/fueni-test/registration/003_step1-invalid-email-format.spec.ts`
+
+**Steps:**
+  1. Fill step 1 with otherwise-valid data but `not-an-email` for the address, then click
+     "Créer mon compte"
+    - expect: "Adresse e-mail invalide." shown inline, same client-side check as auth 1.12 -
+      caught before any network call, still on "Étape 1 / 3"
+  - Confirmed live 2026-08-19. No defect found.
+
+#### 6.5. Step 1 rejects a phone number/e-mail that already belongs to another account
+
+**Files:** `tests/fueni-test/registration/004_step1-duplicate-phone-rejected.spec.ts`,
+`tests/fueni-test/registration/005_step1-duplicate-email-rejected.spec.ts`
+
+**Steps:**
+  1. Fill step 1 with a fresh identity but the shared patient account's own phone number (or,
+     separately, its own e-mail), then click "Créer mon compte"
+    - expect: "Ce numéro de téléphone est déjà enregistré." (or "Cette adresse e-mail est déjà
+      enregistrée.") - still on "Étape 1 / 3"
+  - Confirmed live 2026-08-19: this duplicate check resolves via a lightweight availability
+    call, not the Turnstile-gated account-creation request used by 6.1/6.2 - no long wait
+    needed, and deterministic since it targets the suite's own known-registered account rather
+    than depending on any prior test run's leftover state. No defect found.

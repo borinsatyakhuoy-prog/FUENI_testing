@@ -154,3 +154,34 @@
     - expect: Flips back to `type="password"`
   - Confirmed live 2026-08-18: previously only asserted the toggle button was present (1.1), not
     that it actually changes the field's masking. No defect found.
+
+#### 1.12. Login with a malformed e-mail shows a format-specific error
+
+**File:** `tests/fueni-test/auth/012_login-malformed-email.spec.ts`
+
+**Steps:**
+  1. On the "E-mail" tab, enter `not-an-email` and any password, then click "Connexion"
+    - expect: "Adresse e-mail invalide." shown inline, caught client-side before any credentials
+      check - distinct from 1.2's generic "Identifiant ou mot de passe incorrect."
+  - Confirmed live 2026-08-19. No defect found.
+
+#### 1.13. Login with a too-short phone number shows a format-specific error
+
+**File:** `tests/fueni-test/auth/013_login-invalid-phone-format.spec.ts`
+
+**Steps:**
+  1. On the "Téléphone" tab (default), enter `123` and any password, then click "Connexion"
+    - expect: "Numéro de téléphone invalide." shown inline
+  - Confirmed live 2026-08-19. No defect found.
+
+#### 1.14. Forgot password - an incorrect OTP is rejected with an attempt-counted error
+
+**File:** `tests/fueni-test/auth/014_forgot-password-wrong-otp.spec.ts`
+
+**Steps:**
+  1. Request a real e-mail OTP (as in 1.8), then enter `000000` and click "Vérifier"
+    - expect: "Code incorrect. Il vous reste N tentative(s)." - a specific, non-generic error;
+      the API tracks remaining attempts rather than failing silently or locking out immediately
+  - Confirmed live 2026-08-19. Deliberately submits only one wrong guess - burning further
+    attempts risks locking the shared account out of password reset for later test runs. No
+    defect found.
