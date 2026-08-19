@@ -459,3 +459,67 @@ Everything else checked at 320px was clean: patient dashboard (top-bar icons, gr
 registration wizards (no horizontal overflow on any of them). Notifications-bell touch target
 measured 36x36 CSS px - below the AAA 44x44 guideline but comfortably above the WCAG AA minimum
 (24x24), so not written up as a defect.
+
+---
+
+# Session 7 (2026-08-19) - Full-suite headed run, Cloudflare escalation recurrence
+
+**Goal:** run the full automated suite headed, chromium only (per explicit request), as a general
+health check after the prior sessions' new spec additions.
+
+## Full-suite chromium run - 54 passed, defects/Turnstile-only failures
+
+A full headed run (`npx playwright test --headed`, all 3 projects queued) was stopped once
+chromium's own 54 tests completed, before firefox/webkit progressed far - the user only wanted
+chromium for this pass. Chromium results: 54 passed, plus the already-expected failing-by-design
+regression tests and Turnstile-blocked tests, plus one genuinely new observation:
+
+- **`auth/004`, `auth/008`, `auth/014` (new wrong-OTP test), `registration/002`:** all Turnstile-
+  gated, all failed - the widget's button stayed `disabled` for the full timeout in every case
+  (confirmed via trace on `auth/014`: ~190 polls over 120s, `disabled` attribute never cleared).
+  This is `test-results/Report.md` Issue 3, recurring again.
+- **`auth/005`, `auth/006` (plain, non-Turnstile post-logout redirect):** also failed - stuck on
+  `/fr/dashboard` for the full 30s wait instead of completing the redirect to `/login`. Same
+  "escalation beyond Turnstile-gated flows" sub-symptom of Issue 3, already documented from an
+  earlier 2026-08-19 session.
+- **`dashboard/003`:** correctly self-skipped (not a failure) - the shared account's profile is
+  currently complete, so the "Compléter mon profil" banner is correctly absent; this test detects
+  that state and skips itself by design, per its own header comment.
+- **`auth/010`:** one flaky attempt, passed on Playwright's built-in retry - already a known
+  occasional flake pattern in this suite, not investigated further.
+
+## Attempted healing - confirmed environmental, not a code defect
+
+Per the user's request to "heal" the repeatedly-failing Cloudflare-verification tests: investigated
+whether this was a new regression or the already-documented Issue 3 recurring. Ran an isolated
+retry of just `auth/005` + `auth/006` (2 tests, 3 attempts each) roughly 5 minutes after the large
+run stopped, specifically to test whether a short gap/lower traffic volume would let the escalation
+clear. **All 6 attempts still failed identically** - stuck on `/fr/dashboard`, same as during the
+full run.
+
+**Conclusion:** this is not something a test-code change can fix. The test assertions themselves
+are correct (this is genuine expected app behavior - a logout should redirect to login) and
+already generously timed (30-120s per assertion, well above normal); prior sessions already tried
+extending timeouts further and confirmed that doesn't help. No test code was changed - loosening
+these assertions to force a pass would hide a real environmental limitation rather than heal
+anything. New evidence from this session: a ~5-minute gap between a heavy run and a "quiet"
+isolated retry is **not sufficient** for Cloudflare's escalation to clear - the actual cool-down
+window needed is longer than that (unmeasured). Further live retries of the Turnstile-gated tests
+were deliberately not attempted in this same session, to avoid deepening the escalation further
+and to avoid burning more of the shared account's limited password-reset attempts
+(`auth/014`'s wrong-OTP test consumes one on every real run).
+
+**Practical guidance for future sessions:** don't chain a full-suite run immediately into more
+Turnstile-gated test attempts on the same day. The only real fix remains the Cloudflare
+test-key/IP-allowlist ask already drafted in `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`.
+
+## New, distinct symptom - `registration/002`'s SMS-dispatch text didn't appear
+
+Unlike the other three Turnstile-gated failures, `registration/002`'s Turnstile widget *did* clear
+this time (the wizard genuinely reached "Étape 3 / 3"), but the SMS-dispatch confirmation text
+(`/envoyé par SMS/`) never appeared within the following 30s wait. This is a different symptom
+from the stuck-disabled-button pattern seen elsewhere - possibly the SMS provider/backend itself
+being rate-limited or slow under heavy automated load, separate from the Turnstile widget. Not
+enough evidence yet to call this a confirmed distinct root cause; flagged here so a future session
+doesn't have to rediscover it, and so it's watched for separately from the Turnstile pattern going
+forward.

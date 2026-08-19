@@ -223,6 +223,31 @@ escalation set in.
 - **Recommendation:** space out automated runs against this staging environment, or obtain a
   Turnstile/anti-automation bypass or test-mode token from the FUENI team for CI use. See
   `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request/README.md` for the formalized ask.
+- **Recurrence confirmed again, 2026-08-19 (Session 7, full-suite headed run):** running the full
+  suite headed (chromium; 171 tests were queued for chromium+firefox+webkit but the run was
+  stopped once chromium's 54 own tests finished) reproduced the exact same pattern: `auth/004`,
+  `auth/008`, `auth/014` (new wrong-OTP test) and `registration/002`'s Turnstile widget all stayed
+  disabled for the full 120s wait (confirmed via trace: the button's `disabled` attribute never
+  cleared across ~190 polls), and `auth/005`/`auth/006`'s plain post-logout redirect stayed stuck
+  on `/fr/dashboard` for the full 30s wait, exactly as before.
+  - **New this time:** a follow-up isolated retry of just `auth/005`+`auth/006` (2 tests, 3 attempts
+    each = 6 attempts total), run ~5 minutes after stopping the large run, still failed identically
+    every single attempt. This is new evidence beyond the original write-up: a short (~5 min) gap
+    between a heavy run and a "quiet, isolated" retry is **not** enough for the escalation to
+    clear - the cool-down window this needs is longer than that, though how much longer remains
+    unmeasured. Per this suite's standing policy, no test assertions were loosened to force a
+    pass - the underlying behavior expectations here are correct; only the anti-automation
+    control's escalation is preventing them from being exercised right now.
+  - **New, distinct symptom in `registration/002`:** unlike the other three, this run's Turnstile
+    widget *did* clear (the wizard genuinely reached "Étape 3 / 3"), but the SMS-dispatch
+    confirmation text (`/envoyé par SMS/`) then never appeared within 30s. This suggests the SMS
+    provider/backend itself may also be rate-limited or slow under heavy automated load, separate
+    from the Turnstile widget - worth watching for in future sessions rather than assuming it's
+    the identical root cause.
+  - **Practical guidance going forward:** do not chain a full-suite run immediately into further
+    Turnstile-gated test attempts on the same day - the tests are already correctly designed
+    (generous timeouts, documented caveats); the only real fix is the Cloudflare test-key/IP-
+    allowlist ask already drafted in `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`.
 
 ### Issue 4 - "Notifications" bell button is a dead UI element (new, 2026-08-18)
 - **Severity:** Low/Medium (missing functionality, not a crash - no console error, no broken
