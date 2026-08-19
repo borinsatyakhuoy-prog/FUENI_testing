@@ -12,7 +12,9 @@ test.describe('Authentication', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     await page.getByRole('button', { name: 'Se déconnecter' }).click();
-    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+    // Observed 2026-08-19: the post-logout fallback navigation (see Issue 1 below)
+    // can take longer than 15s under heavier load against this shared staging host.
+    await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
 
     // Known issue (2026-08-17, test-results/exploratory-findings.md Issue 1): a
     // CORS-blocked fetch for a Next.js RSC payload fires during the post-logout

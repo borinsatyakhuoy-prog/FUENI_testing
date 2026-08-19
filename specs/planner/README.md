@@ -43,6 +43,7 @@ never depends on or risks a fixed synthetic account.
   (appointments booking & listing, documents, FAQ, support) - tracked here so this plan doesn't
   need re-structuring each time SCRUM advances; promote each subsection to its own file with
   real test cases once the feature ships.
+- [08-performance.md](08-performance.md) - §8 Page-load performance (P90 SLA across key pages)
 
 Numbering is per-file (each `tests/fueni-test/<area>/` folder starts its own `001_*.spec.ts`),
 following the same convention as the reference FAPA test suite this project's tooling is

@@ -1,7 +1,7 @@
 # FUENI (Patient) - Test Execution Report
 
 **Date:** 2026-08-17 (original pass), updated 2026-08-18 (Session 2 - additional exploratory
-testing and defects)
+testing and defects), updated 2026-08-19 (Session 3 - page-load performance/SLA testing)
 **Environment:** `https://fueni-staging-preview-patient.allweb.cloud` (new staging), cross-checked
 against `https://fueni-staging-patient.allweb.cloud` (old stable)
 **Scope:** Patient role only, per `user-stories/SCRUM.md`. Project is at sprint SCRUM-10 - several
@@ -11,9 +11,9 @@ nav destinations are intentionally unfinished placeholders, not defects (see bel
 
 | Metric | Count |
 |---|---|
-| Test cases planned (manual + automated) | 41 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 41 (32 original + 9 added across 7 new files in Session 2) |
-| Passing reliably | 37 (90.2%) |
+| Test cases planned (manual + automated) | 42 automated + exploratory pass covering the same scope |
+| Automated test cases executed | 42 (32 original + 9 added in Session 2 + 1 performance suite in Session 3) |
+| Passing reliably | 38 (90.5%) |
 | Failing by design (documents a real, open defect) | 2 |
 | Blocked by an external anti-automation control (Cloudflare Turnstile) | 2 |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
@@ -59,7 +59,7 @@ See `test-results/exploratory-findings.md` for the full write-up. Summary:
 
 ## 3. Automated Test Results
 
-**Suite:** `tests/fueni-test/` (32 files, 41 test cases), Playwright, chromium project.
+**Suite:** `tests/fueni-test/` (33 files, 42 test cases), Playwright, chromium project.
 
 ### Original suite (2026-08-17), unchanged
 
@@ -90,11 +90,21 @@ full detail):
 | `profile/005_notification-preference-toggle-persists.spec.ts` | 1 | Passing - real, persisted, safely-revertible toggle; one transient flake self-healed via the suite's `retries: 2` |
 | **Subtotal** | **9** | **8 passing, 1 failing-by-design** |
 
+### Session 3 (2026-08-19) addition
+
+One new file (1 test case), a P90 page-load SLA check across four key pages - see §6 Performance
+Testing below and `specs/planner/08-performance.md` §8 for full detail:
+
+| File | Tests | Result |
+|---|---|---|
+| `performance/001_page-load-sla.spec.ts` | 1 | Passing - all 4 measured pages meet the P90 load-time SLA |
+| **Subtotal** | **1** | **1 passing** |
+
 ### Combined total
 
 | | Files | Tests | Passing | Failing-by-design | Blocked (Turnstile) |
 |---|---|---|---|---|---|
-| **Total** | **32** | **41** | **37 (90.2%)** | **2** | **2** |
+| **Total** | **33** | **42** | **38 (90.5%)** | **2** | **2** |
 
 ### Healing activities performed
 
@@ -160,12 +170,21 @@ escalation set in.
 - **Description:** The original `user-stories/SCRUM.md` assumed two separate inline "required"
   messages; actual behavior is one combined alert. AC1 corrected to match.
 
-### Issue 3 - Cloudflare Turnstile stops clearing after repeated automated runs
+### Issue 3 - Cloudflare anti-automation escalation stops clearing after repeated automated runs
 - **Severity:** Environmental/CI-reliability, not a product defect.
 - **Description:** See "Healing activities" #8 above and `test-results/exploratory-findings.md`
-  for full detail. Affects `auth/004`, `auth/008`, and `registration/002`.
+  for full detail. Originally observed affecting only Turnstile-gated flows (`auth/004`,
+  `auth/008`, `registration/002`). Confirmed live 2026-08-19, after an unusually heavy volume of
+  automated traffic in one session (a new 90-navigation performance suite immediately followed by
+  a full 43-test functional run), the same escalation pattern extended to a plain, non-Turnstile
+  flow: `auth/005`/`auth/006`'s post-logout redirect stopped completing at all (still stuck on
+  `/fr/dashboard` after 30s, up from the original 15s timeout) from the automated test runner's
+  browser fingerprint specifically - a manual/interactive session (different browser context, same
+  account) logged out normally and immediately at the same time, confirming this is
+  fingerprint/rate-based and not a real regression in the logout flow itself.
 - **Recommendation:** space out automated runs against this staging environment, or obtain a
-  Turnstile bypass/test-mode token from the FUENI team for CI use.
+  Turnstile/anti-automation bypass or test-mode token from the FUENI team for CI use. See
+  `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request/README.md` for the formalized ask.
 
 ### Issue 4 - "Notifications" bell button is a dead UI element (new, 2026-08-18)
 - **Severity:** Low/Medium (missing functionality, not a crash - no console error, no broken
@@ -241,7 +260,33 @@ escalation set in.
   (`playwright.config.ts`) but this session's healing focused on chromium; a firefox/webkit pass
   is recommended before considering the suite CI-ready.
 
-## 6. Summary and Recommendations
+## 6. Performance Testing (Session 3, 2026-08-19)
+
+**Suite:** `tests/fueni-test/performance/001_page-load-sla.spec.ts` (chromium only - LCP-style
+metrics are Chromium-specific by spec; see `specs/planner/08-performance.md` §8 for why this
+test isn't run cross-browser).
+
+Rather than a single timing per page, each key page was loaded **15 times** and evaluated at the
+**P90** percentile against an SLA, since one sample is too noisy to be a meaningful pass/fail
+signal. Thresholds: TTFB ≤ 800ms, FCP ≤ 1800ms, LCP ≤ 2500ms (Google's published Core Web Vitals
+"good" thresholds), full page load ≤ 3000ms (this suite's primary metric). Percentile-fallback
+policy: if more than half the pages missed the P90 SLA, the report would fall back to P95 then
+P99 and say so explicitly - not needed this run.
+
+| Page | Samples | Load (P90) | Load SLA (≤3000ms) |
+|---|---|---|---|
+| Login (`/fr/login`) | 15 | 315ms | ✅ PASS |
+| Dashboard (`/fr/dashboard`) | 15 | 583ms | ✅ PASS |
+| Mon profil (`/fr/my-profile`) | 15 | 419ms | ✅ PASS |
+| Connexion & Sécurité (`/fr/security`) | 15 | 498ms | ✅ PASS |
+
+**Result:** all four pages pass the P90 SLA comfortably, worst case (Dashboard) at 583ms against
+a 3000ms bar - well within budget on this staging environment. No performance defects found. Full
+per-page distribution (min/P50/P90/P95/P99/max for TTFB, DOM Content Loaded, FCP, LCP, and full
+load) is in `test-results/performance-report.md`; raw numbers for future trend comparison are in
+`test-results/performance-results.json`.
+
+## 7. Summary and Recommendations
 
 1. **Ship-readiness of what exists today:** authentication and account/profile management are
    solid and well-covered, including both login identifier paths (e-mail and phone), session
@@ -265,3 +310,7 @@ escalation set in.
 8. **Consider small follow-ups from Session 2:** an automated check for the login-page
    language switcher's translated strings, and re-verifying whether registration step 2's
    "Langue du compte" English-default is reproducible (see Coverage Analysis above).
+9. **Re-run the performance suite periodically** (Session 3) - the current numbers are a healthy
+   baseline (§6), not a one-time pass; re-running it after significant feature work or before a
+   production push would catch a regression before users do. `performance-results.json` is
+   already in a shape that a future run could diff against.

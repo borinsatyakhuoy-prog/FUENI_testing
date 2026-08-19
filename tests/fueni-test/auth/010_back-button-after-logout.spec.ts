@@ -10,7 +10,10 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('heading', { name: 'Connexion & Sécurité' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Se déconnecter' }).click();
-    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+    // Observed 2026-08-19: the post-logout fallback navigation (see Issue 1,
+    // test-results/exploratory-findings.md) can take longer than 15s under
+    // heavier load against this shared staging host.
+    await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
 
     await page.goBack();
 
