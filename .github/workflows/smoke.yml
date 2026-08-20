@@ -1,0 +1,45 @@
+name: Smoke tests
+
+# Fast, low-risk critical-path check (5 tests, chromium only, ~30s) on every push/PR to main.
+# Deliberately NOT the full suite here - see .github/workflows/full-suite-nightly.yml for that.
+# Requires repo secrets: FUENI_BASE_URL, FUENI_EMAIL, FUENI_PASSWORD (Settings > Secrets and
+# variables > Actions). Until those are added, this workflow will run but fail at the login
+# step - that's expected, not a bug in the workflow itself.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run smoke subset
+        env:
+          FUENI_BASE_URL: ${{ secrets.FUENI_BASE_URL }}
+          FUENI_EMAIL: ${{ secrets.FUENI_EMAIL }}
+          FUENI_PASSWORD: ${{ secrets.FUENI_PASSWORD }}
+        run: npx playwright test --grep @smoke --project=chromium
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore

@@ -8,10 +8,15 @@ small-component responsive pass; Session 7 - full-suite chromium reruns confirmi
 recurrence), updated 2026-08-20 (Session 8 - first full cross-browser run (chromium + firefox +
 webkit); the 5 tests structurally blocked by the Cloudflare anti-automation control were
 converted from failing to skipped with an explanatory reason, per the suite's Issue 3 policy;
-surfaced 2 new cross-browser-only findings, see Issues 10-11)
+surfaced 2 new cross-browser-only findings, see Issues 10-11; Sessions 9-10 - two more full
+3-browser reruns confirming Issue 11 is a genuine timing race, not an engine-specific bug;
+Session 11 - added CI workflows, a security-headers regression lock, and flagged accessibility
+scanning as a future addition; Session 12 - first authenticated admin-role exploration, 3 new
+defects found, see §9)
 **Environment:** `https://fueni-staging-preview-patient.allweb.cloud` (new staging), cross-checked
 against `https://fueni-staging-patient.allweb.cloud` (old stable); Session 5 additionally covers
-`https://fueni-staging-preview-pro.allweb.cloud` (doctor/"Espace professionnel")
+`https://fueni-staging-preview-pro.allweb.cloud` (doctor/"Espace professionnel"); Session 12
+additionally covers `https://fueni-staging-preview-admin.allweb.cloud` (admin portal)
 **Scope:** Primarily patient role, per `user-stories/SCRUM.md`. Project is at sprint SCRUM-10 -
 several nav destinations are intentionally unfinished placeholders, not defects (see below).
 Sessions 4-5 also cover some cross-cutting/doctor-role findings (security, doctor-role
@@ -23,7 +28,7 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Metric | Count |
 |---|---|
 | Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 58 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe); executed across all 3 browser projects (chromium + firefox + webkit = 177 runs incl. the seed test) in Sessions 9-10 |
+| Automated test cases executed | 64 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe + 6 added in Session 11 - security headers/cookie/CSP regression locks and a first a11y scan); cross-browser run counts (171/177) predate the Session 11 continued additions - a fresh full run would land around 183-186 |
 | Passing reliably | 150-153/177 (84.7-86.4%) across all 3 browsers over 2 full reruns (Sessions 9-10, no code changes between them) - see below for why the cross-browser rate is lower than the chromium-only 92.9% baseline, and why the exact count shifts slightly run to run |
 | Failing by design (documents a real, open defect) | 2 (auth/006, plus the new webkit-specific auth/010 instability - Issue 11) |
 | Blocked by an external anti-automation control (Cloudflare Turnstile/escalation) | 5 tests × 3 browsers - as of Session 8 these are marked **skipped** (not failed), each with an inline reason, rather than left as red failures for a condition no test-side fix can address (see Issue 3) |
@@ -215,7 +220,7 @@ Two changes this session:
    `seed.spec.ts`, `retries: 2`, single worker): 171 runs, **146 passed (85.4%)**, **5 failed
    (2.9%)**, **2 flaky (1.2%, failed once then passed on retry)**, **18 skipped (10.5%)**,
    31m21s total. This is the first time firefox/webkit have been exercised at all (recommendation
-   #7 in §9 below), and it surfaced two new, genuinely cross-browser-only findings rather than
+   #7 in §10 below), and it surfaced two new, genuinely cross-browser-only findings rather than
    re-confirming anything already known - see Issues 10-11.
 
    | Outcome | Count | Detail |
@@ -269,7 +274,7 @@ The one captured error (`Execution context was destroyed, most likely because of
 is ambiguous - it's as consistent with local browser-process/resource contention from running 10
 contexts at once in a single Node process as it is with server-side degradation or anti-automation
 throttling, and this probe can't distinguish the two. **Not** treated as a confirmed product
-defect - see recommendation in §9. Report written to `test-results/load-test-report.md` on every
+defect - see recommendation in §10. Report written to `test-results/load-test-report.md` on every
 run, same rolling-baseline pattern as `performance-report.md` - regenerated and diffable run over
 run, not a one-time snapshot.
 
@@ -331,6 +336,54 @@ run-to-run stability. **177 runs, 153 passed (86.4%), 4 failed (2.3%), 2 flaky (
   robust running many parallel contexts in a single process. Still not fully conclusive without a
   dedicated load-testing tool (see recommendation #15), but the balance of evidence has shifted.
   The test itself was correctly classified as flaky (retry passed), exactly as designed.
+
+### Session 11 (2026-08-20) - CI workflows and a security-headers regression lock
+
+Two QA-operations gaps closed proactively, not in response to a new finding:
+
+**1. This suite had no CI at all** - every run to date has been triggered manually. Added two
+GitHub Actions workflows:
+- `.github/workflows/smoke.yml` - the `@smoke` subset (chromium only, ~30s) on every push/PR to
+  `main`, for fast feedback.
+- `.github/workflows/full-suite-nightly.yml` - the full 3-browser suite once daily (02:00 UTC,
+  also triggerable on demand via `workflow_dispatch`), uploading the HTML/Monocart/Markdown
+  reports as build artifacts. Deliberately **not** on every push - see Issue 3: this shared
+  staging host escalates its Cloudflare anti-automation posture under heavy/repeated automated
+  traffic, so a daily cadence was chosen over per-commit to avoid manufacturing exactly the
+  condition that issue describes.
+- **Action required, not yet done:** both workflows read `FUENI_BASE_URL`, `FUENI_EMAIL`,
+  `FUENI_PASSWORD` (and `FUENI_PHONE_NATIONAL` for the full suite) from GitHub Actions repo
+  secrets - this needs someone with repo admin access to add them under Settings → Secrets and
+  variables → Actions. Until then, both workflows will run but fail at the login step; that's
+  expected, not a bug in the YAML itself.
+
+**2. New regression-lock test**
+(`security/008_response-security-headers.spec.ts`): confirmed live that the login page's response
+already carries solid baseline security headers (HSTS, `X-Content-Type-Options: nosniff`,
+clickjacking defense via `X-Frame-Options`/CSP `frame-ancestors`, and a real, non-empty CSP) -
+this is not a gap-driven test, since nothing is currently missing. It exists purely to catch an
+accidental removal or weakening of these headers in a future deploy, extending Session 4's
+OWASP-aligned pass (which never asserted on response headers directly). Verified passing on all 3
+browsers.
+
+### Session 11 continued (2026-08-20) - automating known security findings, plus new a11y coverage
+
+**Automated two already-known findings from Session 4's manual OWASP pass**
+(`defects/http-security-header-gaps`), rather than re-discovering them: `security/009` (SESSION
+cookie missing `Secure`) and `security/011` (login page CSP has no `script-src`/`default-src`).
+Both are live regression checks, currently failing by design (the underlying gaps are still
+open). A genuinely **new** finding surfaced while doing this: `security/010` shows the
+*authenticated* app's own CSP (checked on `/fr/dashboard`, distinct from the login page) allows
+`'unsafe-inline'`/`'unsafe-eval'` in `script-src` - added as finding #5 to the same
+`http-security-header-gaps` defect.
+
+**New accessibility coverage** (`tests/fueni-test/a11y/`, `@axe-core/playwright` added as a
+dependency): first-ever automated a11y scan for this suite, on the login and dashboard pages.
+Found a real, systemic WCAG 2 AA `color-contrast` failure - see
+`defects/muted-text-color-contrast-below-wcag-aa` - affecting the shared `text-muted-foreground`
+design token (4.1-4.46:1 against various backgrounds, just under the 4.5:1 minimum) plus one
+more severely non-compliant caption style (2.56:1). Both live regression tests are currently
+failing, by design.
 
 ## 4. Defects Log
 
@@ -480,7 +533,7 @@ run-to-run stability. **177 runs, 153 passed (86.4%), 4 failed (2.3%), 2 flaky (
   timing out at the full 150s test timeout on all 3 attempts (initial + 2 retries), each attempt
   taking the full ~2.5 minutes. No error is shown in the UI in the trace/screenshot - the
   "Continuer" click appears to do nothing observable within the test's visibility. This is the
-  first time this test has ever run on firefox (see §9 recommendation #7), so there's no prior
+  first time this test has ever run on firefox (see §10 recommendation #7), so there's no prior
   baseline to compare against - genuinely new information, not a regression from a known-good
   state.
 - **Evidence:** `playwright-output\fueni-test-security-004_ex-*-firefox*\` (screenshot + trace,
@@ -671,7 +724,41 @@ full-page layout. Two new defects found (Issues 8-9 above), both specific to 320
 absent at 375px. Everything else checked - patient dashboard top-bar icons, Mon profil, both
 roles' registration wizards - was clean at 320px.
 
-## 9. Summary and Recommendations
+## 9. Admin-Role Exploration (Session 12, 2026-08-20)
+
+First-ever pass at the admin portal (`https://fueni-staging-preview-admin.allweb.cloud`), a
+distinct area not previously in scope (`user-stories/SCRUM.md`/`specs/planner/` cover patient/
+doctor only). Full write-up: `tickets/ADMIN-ROLE-exploration-notes`. Summary:
+
+**Confirmed working:** dedicated Keycloak realm (`fueni-platform-admin`) separate from patient/
+doctor, email-only login with no self-service registration/reset, generic anti-enumeration error
+messages, functionally active append-only audit logging, and clean tablet (768px)/desktop
+(1600px) layouts.
+
+**Three new defects found** (see `defects/`):
+- `admin-audit-retention-policy-contradiction` - login page claims "conservation 20 ans"; the
+  audit log page itself says retention is "à confirmer (DPO)" - a real inconsistency between
+  compliance-facing copy and the actual data-governance statement on a PRODUCTION-labeled,
+  RGPD/HDS system.
+- `admin-audit-log-generic-admin-identity` - the audit log attributes every action to a generic
+  "Secondary Admin" seat label rather than the real logged-in account (confirmed via a
+  fresh account whose own session showed "Test Admin" in the UI while the audit table showed
+  "Secondary Admin" - with that label's history predating the account's existence), directly
+  contradicting the page's own "Comptes nommés individuels" (named individual accounts) claim.
+- `admin-console-mobile-not-responsive` - mobile (375px) is entirely blocked behind a static
+  "switch to tablet/desktop" page rather than an adapted layout. Deliberate and well-communicated,
+  not broken - but doesn't meet a literal "responsive across mobile/tablet/desktop" bar if that
+  was the actual requirement. Verdict pending the real DoD text.
+
+**Deliberately not tested:** anti-brute-force lockout threshold/IP rate limiting (to avoid
+locking the only working admin account), DSI-triggered password reset invalidating other
+sessions (needs a second concurrent session), and a distinct login "success" toast (redirect
+confirmed working; toast not observed).
+
+**Not yet automated** - no admin-role test suite exists; see the ticket for what would need
+resolving (mainly getting the real "022"/"§9" requirement text) before locking in assertions.
+
+## 10. Summary and Recommendations
 
 1. **Ship-readiness of what exists today:** authentication and account/profile management are
    solid and well-covered, including both login identifier paths (e-mail and phone), session
@@ -727,3 +814,29 @@ roles' registration wizards - was clean at 320px.
 16. **Use `npm run test:smoke` for quick sanity checks** (Session 8) - the 5-test `@smoke` subset
     runs in under 30s and is meant for fast "is anything fundamentally broken" checks between full
     suite runs, not as a substitute for the full suite before a release.
+17. **Add the required GitHub Actions secrets** (Session 11) - `FUENI_BASE_URL`, `FUENI_EMAIL`,
+    `FUENI_PASSWORD`, `FUENI_PHONE_NATIONAL` under Settings → Secrets and variables → Actions, so
+    `.github/workflows/smoke.yml` and `full-suite-nightly.yml` can actually authenticate instead
+    of failing at the login step. High priority - the workflows are inert without this.
+18. **Fix the color-contrast defects axe-core found** (Session 12,
+    `defects/muted-text-color-contrast-below-wcag-aa`) - accessibility scanning
+    (`@axe-core/playwright`, `tests/fueni-test/a11y/`) was added this session on the login and
+    dashboard pages and immediately found two real WCAG 2 AA `color-contrast` failures: the
+    shared `text-muted-foreground` token (4.1-4.46:1, just under the 4.5:1 minimum) and a
+    separate, more severe caption style (2.56:1). Priority: fix the 2.56:1 caption first
+    (cheapest, most severe), then the shared token (fixes it app-wide, not just the 2 pages
+    scanned so far). Consider expanding the a11y scan to more pages once these are triaged.
+19. **Prioritize the admin audit-log identity defect** (Session 12,
+    `defects/admin-audit-log-generic-admin-identity`) - highest priority of the three new admin
+    findings, since it directly undermines the one feature (individual-accountability audit
+    logging) this PRODUCTION-labeled system leans on for its own RGPD/HDS compliance posture.
+20. **Reconcile the admin audit-retention copy** (Session 12,
+    `defects/admin-audit-retention-policy-contradiction`) - decide on one true retention
+    statement and make the login page and the audit log page agree; don't leave a confident "20
+    ans" claim standing next to "à confirmer (DPO)".
+21. **Get the real "022"/"§9" requirement text before automating the admin suite** (Session 12,
+    `tickets/ADMIN-ROLE-exploration-notes`) - this session's interpretation of the mobile-gate
+    behavior and the anti-enumeration wording is a best effort without the canonical spec; verify
+    against it before locking in assertions, and decide whether to build a full admin-role suite
+    now that a reachable, OTP-capable account exists (unlike the doctor role, not currently
+    blocked by Turnstile or KYC).

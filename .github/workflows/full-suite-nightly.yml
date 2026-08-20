@@ -1,0 +1,52 @@
+name: Full suite (nightly)
+
+# Full 3-browser suite (chromium + firefox + webkit, ~177 runs, ~30min) on a schedule rather
+# than every push - see test-results/Report.md Issue 3: this shared staging host is known to
+# escalate its Cloudflare anti-automation posture under heavy/repeated automated traffic, so
+# this suite runs it once a day, not on every commit. Trigger manually via workflow_dispatch
+# for an on-demand run.
+# Requires repo secrets: FUENI_BASE_URL, FUENI_EMAIL, FUENI_PASSWORD, FUENI_PHONE_NATIONAL
+# (Settings > Secrets and variables > Actions).
+on:
+  schedule:
+    # 02:00 UTC daily - outside typical staging-usage hours for this project's team.
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  full-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps
+
+      - name: Run full suite
+        env:
+          FUENI_BASE_URL: ${{ secrets.FUENI_BASE_URL }}
+          FUENI_EMAIL: ${{ secrets.FUENI_EMAIL }}
+          FUENI_PASSWORD: ${{ secrets.FUENI_PASSWORD }}
+          FUENI_PHONE_NATIONAL: ${{ secrets.FUENI_PHONE_NATIONAL }}
+        run: npx playwright test
+
+      - name: Upload reports (HTML + Monocart + Markdown)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-suite-reports
+          path: |
+            playwright-report/
+            monocart-report/
+            test-results/Report.md
+            test-results/performance-report.md
+            test-results/load-test-report.md
+          retention-days: 30
+          if-no-files-found: ignore
