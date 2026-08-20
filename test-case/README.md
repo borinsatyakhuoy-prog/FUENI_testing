@@ -18,3 +18,5 @@ against the given list.
 | Retest | Scope | Result summary | Details |
 |---|---|---|---|
 | [doctor/kyc-verification](doctor/kyc-verification/README.md) | Doctor role KYC verification flow (16 requested items) | 9 pass, 2 mismatch/not-found, 3 partial, 2 not testable in real time. Also surfaced a major update to `tickets/DOCTOR-ROLE-registration-blocked-by-turnstile` (registration no longer Turnstile-blocked) | [README](doctor/kyc-verification/README.md) |
+| [admin/login-flow](admin/login-flow/README.md) | Admin role login/session flow (16 requested items) | 6 pass (2 with caveats), 5 not testable (no path to a temp-password first-login state), 3 partial (deliberately limited to avoid lockout risk), 2 already-tracked defects (audit retention, mobile responsive) | [README](admin/login-flow/README.md) |
+| [admin/app-shell-fue-815](admin/app-shell-fue-815/README.md) | Admin app shell architecture (FUE-815, 3 requested items, independent numbering from login-flow) | 2 pass, 1 mismatch (`/en` fully reachable despite no language selector) | [README](admin/app-shell-fue-815/README.md) |
