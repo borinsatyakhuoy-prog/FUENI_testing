@@ -25,6 +25,30 @@ Two related symptoms observed so far, both attributable to this:
    same time. This suggests Cloudflare's anti-automation posture can widen beyond the
    specifically-gated flows once a fingerprint is flagged heavily enough.
 
+## Reconfirmed 2026-08-20, from automated (not interactive) traffic
+
+While building `tests/fueni-test/doctor/001_plan-selection-gate.spec.ts` - the first real
+automated doctor-role spec, using a scripted mail.tm-backed OTP helper (see
+`tests/fueni-test/helpers/tempmail.ts`) so no manual mailbox reading was involved - repeated
+fresh registration attempts against `fueni-staging-preview-pro.allweb.cloud` started returning a
+degraded verification screen ("Veuillez compléter la vérification de sécurité pour continuer.",
+no OTP input rendered at all) instead of the normal OTP-entry screen. No verification email was
+ever sent for these attempts. This happened after roughly 8 registrations in one session
+(3 interactive + 5 automated, run back-to-back), and did **not** clear on a single retry a few
+minutes later. Consistent with the "escalation beyond Turnstile-gated flows" symptom above, except
+this time triggered by genuinely automated (not merely Playwright-driven-but-manual) traffic,
+which strengthens the case that this is IP/fingerprint-based rather than about human-vs-script
+detection specifically. Deliberately stopped retrying at this point rather than pushing further,
+per this suite's own policy of not trying to fight a shared staging host's anti-automation posture
+(see `tests/fueni-test/load/001_concurrent-login-page-load.spec.ts`'s header for the same
+principle applied to load testing).
+
+**Practical consequence:** the new doctor spec's assertions are all backed by manually-confirmed
+live evidence (see `test-case/doctor/plan-selection-gate-fue-818/README.md`), but a fully green,
+unattended CI run of that spec cannot be verified from this session - it depends on this ticket
+being resolved (or on enough real cooldown time passing) before the registration step reliably
+clears.
+
 ## Sitekey diagnostic (2026-08-19)
 
 Checked whether staging might already be using one of Cloudflare's published test/sandbox
