@@ -50,8 +50,19 @@ Heading in French, body paragraph in English.
 - Confirmed live during doctor-role exploratory pass, 2026-08-19 (see conversation/session notes;
   no dedicated exploratory-findings doc exists yet for the doctor role - candidate for the same
   treatment as `test-results/exploratory-findings.md` once a doctor-role test suite exists).
+- Reconfirmed live 2026-08-20 (`doctor-country-not-listed-no-lang-toggle.png`): the English text
+  still appears verbatim, and this whole registration Step 1 (Éligibilité) page has **no
+  language selector/toggle anywhere** - unlike the admin console's `/en` URL escape hatch
+  (`defects/admin-console-mobile-not-responsive`-adjacent finding) or the patient/doctor apps'
+  own FR/EN toggle elsewhere in the product. A user who hits this English paragraph has no
+  self-service way to switch the page to English either, so the practical impact is a bit worse
+  than "one missing translation key" - it's an isolated pocket of English with no way to make the
+  surrounding page consistent with it.
 
 ## Recommendation
 
 Add the missing French translation key for this waitlist panel's body copy - low priority,
-isolated fix.
+isolated fix. Separately, confirm with product whether this specific registration step is meant
+to be French-only by design (matching the rest of registration) or whether it should carry the
+same language toggle the rest of the app has - if the latter, that's a second, independent gap
+worth its own follow-up.
