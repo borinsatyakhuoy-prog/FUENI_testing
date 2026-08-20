@@ -6,7 +6,7 @@ test.describe('Sidebar Navigation', () => {
     await login(page);
   });
 
-  test('all sidebar links route to their documented destinations', async ({ page }) => {
+  test('all sidebar links route to their documented destinations', { tag: '@smoke' }, async ({ page }) => {
     const routes: Array<[string, RegExp]> = [
       ['Tableau de bord', /\/dashboard/],
       ['Mes RDV', /\/appointments/],

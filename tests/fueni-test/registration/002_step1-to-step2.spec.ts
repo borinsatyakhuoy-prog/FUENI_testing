@@ -7,6 +7,11 @@ test.describe('Registration', () => {
   }) => {
     const uniqueSuffix = Date.now();
 
+    // Step 3 of this flow is blocked by the same live Cloudflare Turnstile anti-automation
+    // control as auth/004 - see tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request and Issue 3
+    // in test-results/Report.md. Skip rather than fail until resolved upstream.
+    test.skip(true, 'Blocked by Cloudflare Turnstile in CI - see tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request');
+
     await page.goto('/fr/register');
     // Confirmed live: filling the very first field (Prénom) too early - before
     // this SPA finishes hydrating - can silently no-op (see 001_step1-validation.spec.ts).

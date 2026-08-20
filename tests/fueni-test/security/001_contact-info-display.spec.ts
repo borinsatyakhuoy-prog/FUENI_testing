@@ -7,7 +7,7 @@ test.describe('Connexion & Sécurité', () => {
     await page.goto('/fr/security');
   });
 
-  test('displays verified e-mail and phone', async ({ page }) => {
+  test('displays verified e-mail and phone', { tag: '@smoke' }, async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Coordonnées & connexion' })).toBeVisible();
     await expect(page.getByText('Adresse e-mail')).toBeVisible();
     await expect(page.getByText('Téléphone', { exact: true })).toBeVisible();

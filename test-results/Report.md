@@ -4,7 +4,11 @@
 testing and defects), updated 2026-08-19 (Session 3 - page-load performance/SLA testing; Session 4
 - OWASP-aligned security pass; Session 5 - first authenticated doctor-role exploration and a
 cross-role responsive-viewport pass; Session 6 - Turnstile sitekey diagnostic and a 320px/
-small-component responsive pass)
+small-component responsive pass; Session 7 - full-suite chromium reruns confirming Issue 3
+recurrence), updated 2026-08-20 (Session 8 - first full cross-browser run (chromium + firefox +
+webkit); the 5 tests structurally blocked by the Cloudflare anti-automation control were
+converted from failing to skipped with an explanatory reason, per the suite's Issue 3 policy;
+surfaced 2 new cross-browser-only findings, see Issues 10-11)
 **Environment:** `https://fueni-staging-preview-patient.allweb.cloud` (new staging), cross-checked
 against `https://fueni-staging-patient.allweb.cloud` (old stable); Session 5 additionally covers
 `https://fueni-staging-preview-pro.allweb.cloud` (doctor/"Espace professionnel")
@@ -19,10 +23,10 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Metric | Count |
 |---|---|
 | Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 56 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6) |
-| Passing reliably | 52 (92.9%) |
-| Failing by design (documents a real, open defect) | 2 |
-| Blocked by an external anti-automation control (Cloudflare Turnstile) | 2 |
+| Automated test cases executed | 56 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6); as of Session 8 executed across all 3 browser projects (chromium + firefox + webkit = 171 runs incl. the seed test) |
+| Passing reliably | 52/56 on chromium (92.9%); 146/171 (85.4%) across all 3 browsers as of Session 8 - see below for why the cross-browser rate is lower |
+| Failing by design (documents a real, open defect) | 2 (auth/006, plus the new webkit-specific auth/010 instability - Issue 11) |
+| Blocked by an external anti-automation control (Cloudflare Turnstile/escalation) | 5 tests × 3 browsers - as of Session 8 these are marked **skipped** (not failed), each with an inline reason, rather than left as red failures for a condition no test-side fix can address (see Issue 3) |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
   targeted pass over previously-untested AC paths and top-bar controls |
 | Bugs/findings logged | 9 confirmed defects (see `defects/README.md` for the full index across
@@ -190,6 +194,85 @@ assertion are currently blocked by Cloudflare bot-detection after repeated runs 
 (see Defects Log, Issue 3) - each of them did pass earlier in this same session before that
 escalation set in.
 
+### Session 8 (2026-08-20) - first full 3-browser run; Turnstile tests converted to skip
+
+Two changes this session:
+
+1. **Skip conversion:** `auth/004`, `auth/005`, `auth/008`, `auth/014`, and
+   `registration/002` were changed from asserting-and-failing to `test.skip(true, reason)`,
+   each with an inline comment pointing at Issue 3 and
+   `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`. These 5 tests are correctly designed and
+   not broken - the failure is a real, external Cloudflare anti-automation control that no
+   test-side change can clear (confirmed across Sessions 6-7 with sitekey inspection and
+   repeated-recurrence evidence). Leaving them red on every run just re-reports a known,
+   already-ticketed, non-actionable-from-here condition; skipping with a reason keeps that
+   distinct from an actual regression, and they'll go back to asserting the moment the ticket is
+   resolved. `auth/006` was deliberately **not** converted - its failure is a real, confirmed
+   product bug (Issue 1, a console error that fires on every logout regardless of Cloudflare
+   state), so it stays as a live failing regression check per the suite's existing policy.
+
+2. **First full cross-browser execution** (chromium + firefox + webkit, all 56 specs +
+   `seed.spec.ts`, `retries: 2`, single worker): 171 runs, **146 passed (85.4%)**, **5 failed
+   (2.9%)**, **2 flaky (1.2%, failed once then passed on retry)**, **18 skipped (10.5%)**,
+   31m21s total. This is the first time firefox/webkit have been exercised at all (recommendation
+   #7 in §9 below), and it surfaced two new, genuinely cross-browser-only findings rather than
+   re-confirming anything already known - see Issues 10-11.
+
+   | Outcome | Count | Detail |
+   |---|---|---|
+   | Passed | 146 | Includes all 3 browsers for every domain not otherwise listed below |
+   | Skipped | 18 | 15 = the 5 Turnstile/escalation tests × 3 browsers (new skip conversion, see above); 3 = `dashboard/003`'s pre-existing conditional skip (shared account's profile-completion banner correctly absent) × 3 browsers |
+   | Failed | 5 | `auth/006` × 3 browsers (Issue 1, known); `security/004_export-data` on **firefox only** (new, Issue 10); `auth/010_back-button-after-logout` on **webkit only**, consistently across all 3 attempts (new, Issue 11) |
+   | Flaky | 2 | `auth/010_back-button-after-logout` on chromium and firefox - failed on the first attempt, passed on retry (same underlying instability as Issue 11, just less consistent on these two engines) |
+
+### Session 8 continued - smoke subset, a long multi-domain journey test, and a bounded load/stress probe
+
+Three additions this session, all scoped and verified individually on chromium before being
+folded into the suite:
+
+**1. Smoke subset (`@smoke` tag):** five existing tests - `auth/001` (login), `dashboard/001`
+(dashboard load), `navigation/001` (sidebar routing), `profile/001` (identity display), and
+`security/001` (contact-info display) - tagged `{ tag: '@smoke' }`. Chosen as the fastest,
+lowest-risk critical-path slice: no Turnstile, no mutation, one page/action each. Runnable via
+`npm run test:smoke` (`playwright test --grep @smoke`) in 23s on chromium alone, vs. 31+ minutes
+for the full suite - meant for a quick "is the app fundamentally up" check, not a replacement for
+the full suite.
+
+**2. New long-session journey test** (`journeys/001_long-session-multi-domain-journey.spec.ts`):
+every other spec in this suite tests one action per fresh login by design; this is deliberately
+the opposite - one continuous authenticated session spanning dashboard → profile edit/cancel →
+security view → a full 6-route sidebar sweep → a real, safely-reverted notification-preference
+mutation → logout, to catch bugs that only surface over a long session (auth silently dropping
+partway through, state leaking between pages) that no single-action spec can. Verified green on
+chromium. One real bug was found and fixed **in the test itself** during authoring: issuing
+`page.goto('/fr/dashboard')` immediately after the post-logout redirect lands raced Issue 1's
+CORS-fallback navigation still settling and threw `net::ERR_ABORTED` on every attempt; fixed by
+awaiting `page.waitForLoadState('load')` first. Documented here rather than silently fixed,
+since it's a useful reminder that this exact race is live on this app and any future test doing
+an immediate post-logout re-navigation should expect it too.
+
+**3. Bounded load/stress probe** (`load/001_concurrent-login-page-load.spec.ts`, full rationale
+in the spec file's header): given Issue 3 already shows this shared staging host escalates its
+Cloudflare posture under heavy automated traffic, this deliberately does **not** attempt a
+production-grade load test. It only ever hits the stateless, pre-auth `/fr/login` page (never an
+authenticated or Turnstile-gated route, so it can't burn the shared account's rate-limit budget),
+ramps concurrency 5 → 10 → 15 contexts, and is hard-capped at 15 with an automatic early stop on
+either >10% request errors or P90 load time exceeding 3x the single-request baseline. Two runs
+during authoring both stopped early at concurrency=10, before ever reaching the 15 cap:
+
+| Run | Baseline (1 req) | @5 concurrent (errors, P90) | @10 concurrent (errors, P90) | Stop reason |
+|---|---|---|---|---|
+| 1 | 95ms | 0/5, 282ms | 2/10, 330ms | 20% error rate > 10% threshold |
+| 2 | 68ms | 0/5, 201ms | 1/10, 410ms | P90 6.0x baseline > 3x threshold |
+
+The one captured error (`Execution context was destroyed, most likely because of a navigation`)
+is ambiguous - it's as consistent with local browser-process/resource contention from running 10
+contexts at once in a single Node process as it is with server-side degradation or anti-automation
+throttling, and this probe can't distinguish the two. **Not** treated as a confirmed product
+defect - see recommendation in §9. Report written to `test-results/load-test-report.md` on every
+run, same rolling-baseline pattern as `performance-report.md` - regenerated and diffable run over
+run, not a one-time snapshot.
+
 ## 4. Defects Log
 
 ### Issue 1 - Console error on logout (CORS-blocked RSC fetch)
@@ -320,6 +403,56 @@ escalation set in.
   unreachable (see Issue 6's ticket).
 - **Evidence/Recommendation:** full write-up at
   `defects/security-page-horizontal-overflow-320/README.md`.
+
+### Issue 10 - GDPR data export never downloads on Firefox (new, Session 8, 2026-08-20)
+- **Severity:** Medium (a real, GDPR-relevant feature - "Exporter mes données" - is untested and
+  possibly non-functional on an entire browser engine; needs manual confirmation before ruling out
+  user impact, since it's currently only evidenced through automation).
+- **Where:** `/fr/security`, "Exporter mes données" → re-auth dialog → "Continuer", **Firefox
+  only**.
+- **Description:** Same flow that passes reliably on chromium in ~5s (re-auth with password,
+  click "Continuer", JSON file downloads) instead never fires a `download` event on firefox,
+  timing out at the full 150s test timeout on all 3 attempts (initial + 2 retries), each attempt
+  taking the full ~2.5 minutes. No error is shown in the UI in the trace/screenshot - the
+  "Continuer" click appears to do nothing observable within the test's visibility. This is the
+  first time this test has ever run on firefox (see §9 recommendation #7), so there's no prior
+  baseline to compare against - genuinely new information, not a regression from a known-good
+  state.
+- **Evidence:** `playwright-output\fueni-test-security-004_ex-*-firefox*\` (screenshot + trace,
+  3 attempts); spec at `tests/fueni-test/security/004_export-data.spec.ts`.
+- **Recommendation:** manually verify in a real, non-automated Firefox browser whether the export
+  genuinely doesn't trigger a download (a real product bug - possibly a browser-specific gap in
+  how the response is served, e.g. a missing `Content-Disposition: attachment` header that only
+  matters to Firefox's download-vs-inline-render heuristic) versus a Playwright/Firefox
+  download-event quirk specific to automation. Do not assume either direction without checking
+  live, since this suite's convention is to never assert against unverified behavior.
+
+### Issue 11 - Back-button-after-logout is unstable across browsers, worst on WebKit (correction to Session 2 finding, Session 8, 2026-08-20)
+- **Severity:** Medium (security-adjacent - a stale "Connexion & Sécurité" heading briefly
+  rendering after logout + back button, even if transient, is the kind of cached-protected-content
+  leak this exact test exists to catch).
+- **Where:** `tests/fueni-test/auth/010_back-button-after-logout.spec.ts` - logout, then browser
+  back button.
+- **Description:** Session 2 originally reported this test as reliably passing ("session really
+  ends, no bfcache leak") - true, but that was chromium-only. Session 8's first-ever cross-browser
+  run shows this doesn't hold uniformly: **webkit failed all 3 attempts** (initial + 2 retries)
+  with the identical error every time - the "Connexion & Sécurité" heading is still visible
+  (`not.toBeVisible()` within 5s fails, resolved element found each time) instead of the fresh
+  Keycloak challenge the test expects. **Chromium and firefox were flaky** - each failed the same
+  way on the first attempt, then passed on retry. Read together, this looks like a real race
+  between the back-navigation restoring a bfcache'd page and the app's session-invalidation
+  redirect kicking in, with WebKit's bfcache/navigation timing exposing it consistently and the
+  other two engines exposing it intermittently under this suite's current single-worker,
+  sequential load.
+- **Evidence:** `playwright-output\fueni-test-auth-010_back-b-*-{chromium,firefox,webkit}*\`
+  (screenshots + traces, 7 recorded attempts across the 3 browsers combined).
+- **Recommendation:** don't treat the chromium-only "passing" history as ground truth going
+  forward; investigate whether the app's post-back-navigation session check has a race window
+  (e.g., relies on a client-side effect that fires after first paint rather than blocking the
+  bfcache restore), and consider whether the test's 5s `not.toBeVisible()` window is long enough
+  to be a fair check versus racing the same window the app itself is racing. Do not widen the
+  timeout as the only fix without first confirming whether real users can perceive the stale page
+  during that window.
 
 ### Finding - Unknown-route 404 page is generic and unbranded (new, 2026-08-18)
 - **Severity:** Low (cosmetic/consistency only - the 404 itself works correctly: real HTTP 404,
@@ -483,8 +616,11 @@ roles' registration wizards - was clean at 320px.
 6. **Expand the plan** as SCRUM advances past sprint 10 - `specs/planner/07-future-features.md`
    already has a home for appointments, documents, FAQ, and support test cases the moment each
    ships, so this is additive, not a restructuring.
-7. **Run the firefox/webkit projects** at least once before treating this suite as
-   cross-browser-verified - only chromium was exercised during either healing session.
+7. **Done, Session 8:** ran the firefox/webkit projects for the first time (171 total runs across
+   all 3 browsers). Surfaced exactly the kind of gap this recommendation anticipated - see Issues
+   10 (GDPR export never downloads on firefox) and 11 (back-button-after-logout unstable on
+   webkit, flaky on chromium/firefox). Don't treat any single-browser "passing" result as
+   cross-browser-verified going forward without re-running the full 3-project suite periodically.
 8. **Consider small follow-ups from Session 2:** an automated check for the login-page
    language switcher's translated strings, and re-verifying whether registration step 2's
    "Langue du compte" English-default is reproducible (see Coverage Analysis above).
@@ -501,3 +637,19 @@ roles' registration wizards - was clean at 320px.
 12. **Fix Issue 5** (Keycloak `userinfo` CORS misconfiguration) - low priority given it isn't
     currently chainable into a leak, but worth closing before any endpoint on that domain adds
     cookie-based auth.
+13. **Investigate Issue 10** (GDPR export never downloads on firefox) - medium priority; verify
+    manually in real firefox before scoping a fix, since this is currently only evidenced through
+    automation and could be either a real product bug or an automation-specific quirk.
+14. **Investigate Issue 11** (back-button-after-logout race, worst on webkit) - medium priority,
+    security-adjacent; don't dismiss as "just flaky" without checking whether real users can
+    perceive the stale cached page during the race window.
+15. **Follow up on the load/stress probe's degradation signal** (§4, Session 8) - low/medium
+    priority. Errors and P90 degradation both appeared around 10 concurrent requests to the
+    stateless login page, well within what a real multi-user staging environment should handle.
+    Since this suite's own probe can't distinguish server-side throttling from local
+    browser-process contention, don't act on it directly - re-run with a proper load-testing tool
+    (k6/artillery) from a separate machine/process if this staging environment's real concurrent
+    capacity ever needs to be confirmed.
+16. **Use `npm run test:smoke` for quick sanity checks** (Session 8) - the 5-test `@smoke` subset
+    runs in under 30s and is meant for fast "is anything fundamentally broken" checks between full
+    suite runs, not as a substitute for the full suite before a release.

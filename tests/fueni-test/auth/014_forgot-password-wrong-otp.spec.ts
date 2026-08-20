@@ -7,6 +7,11 @@ test.describe('Authentication', () => {
   }) => {
     const { email } = requireCredentials();
 
+    // Blocked by the same live Cloudflare Turnstile anti-automation control as
+    // 004_forgot-password-wizard-start.spec.ts - see tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request
+    // and Issue 3 in test-results/Report.md. Skip rather than fail until resolved upstream.
+    test.skip(true, 'Blocked by Cloudflare Turnstile in CI - see tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request');
+
     await page.goto('/fr/password/reset');
     await page.getByRole('tab', { name: 'E-mail' }).click();
     await page.getByRole('textbox', { name: 'Identifiant' }).fill(email);

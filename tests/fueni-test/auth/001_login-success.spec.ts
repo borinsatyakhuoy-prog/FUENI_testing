@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { requireCredentials } from '../helpers/auth';
 
 test.describe('Authentication', () => {
-  test('successful login with valid credentials redirects to dashboard', async ({ page }) => {
+  test('successful login with valid credentials redirects to dashboard', { tag: '@smoke' }, async ({ page }) => {
     const { email, password } = requireCredentials();
 
     await page.goto('/login');

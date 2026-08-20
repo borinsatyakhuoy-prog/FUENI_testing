@@ -7,7 +7,7 @@ test.describe('Mon profil', () => {
     await page.goto('/fr/my-profile');
   });
 
-  test('Identité section is read-only and routes corrections to support', async ({ page }) => {
+  test('Identité section is read-only and routes corrections to support', { tag: '@smoke' }, async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Identité' })).toBeVisible();
     await expect(page.getByText('Prénom')).toBeVisible();
     // "Nom" also labels a field in the separate Contact d'urgence section

@@ -6,7 +6,7 @@ test.describe('Dashboard', () => {
     await login(page);
   });
 
-  test('dashboard shows a personalized greeting and booking CTA', async ({ page }) => {
+  test('dashboard shows a personalized greeting and booking CTA', { tag: '@smoke' }, async ({ page }) => {
     await expect(page.getByRole('heading', { name: /^Bonjour/ })).toBeVisible();
     await expect(page.getByText('Pour votre santé, le maximum sera fait.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Prendre un RDV' })).toBeVisible();
