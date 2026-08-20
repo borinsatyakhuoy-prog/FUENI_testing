@@ -23,8 +23,8 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Metric | Count |
 |---|---|
 | Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 56 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6); as of Session 8 executed across all 3 browser projects (chromium + firefox + webkit = 171 runs incl. the seed test) |
-| Passing reliably | 52/56 on chromium (92.9%); 146/171 (85.4%) across all 3 browsers as of Session 8 - see below for why the cross-browser rate is lower |
+| Automated test cases executed | 58 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe); as of Session 9 executed across all 3 browser projects (chromium + firefox + webkit = 177 runs incl. the seed test) |
+| Passing reliably | 150/177 (84.7%) across all 3 browsers as of Session 9 - see below for why the cross-browser rate is lower than the chromium-only 92.9% baseline |
 | Failing by design (documents a real, open defect) | 2 (auth/006, plus the new webkit-specific auth/010 instability - Issue 11) |
 | Blocked by an external anti-automation control (Cloudflare Turnstile/escalation) | 5 tests × 3 browsers - as of Session 8 these are marked **skipped** (not failed), each with an inline reason, rather than left as red failures for a condition no test-side fix can address (see Issue 3) |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
@@ -273,6 +273,37 @@ defect - see recommendation in §9. Report written to `test-results/load-test-re
 run, same rolling-baseline pattern as `performance-report.md` - regenerated and diffable run over
 run, not a one-time snapshot.
 
+### Session 9 (2026-08-20) - full re-run including the new journey and load specs
+
+Full 3-browser run repeated after committing the smoke tags, journey test, and load probe added
+in Session 8: **177 runs** (171 + the new journey and load specs × 3 browsers), **150 passed
+(84.7%)**, **4 failed (2.3%)**, **5 flaky (2.8%)**, **18 skipped (10.2%)**, 31m52s.
+
+- **Failures unchanged from Session 8:** `auth/006` (chromium + firefox this time, not webkit -
+  see below), `security/004_export-data` (firefox, Issue 10), `auth/010_back-button-after-logout`
+  (webkit, Issue 11). Nothing new.
+- **New flaky result found and fixed: the journey test itself.** `journeys/001` failed on its
+  first attempt on **all 3 browsers**, always at the exact same line - the post-logout
+  `page.goto('/fr/dashboard')` re-check, with `net::ERR_ABORTED` (chromium/webkit) or
+  `NS_BINDING_ABORTED` (firefox). The `waitForLoadState('load')` guard added when this test was
+  first authored (Session 8) turned out not to be a reliable enough signal that Issue 1's
+  CORS-fallback redirect chain had actually finished settling - it can still be mid-navigation
+  after `load` fires. Fixed by wrapping the re-navigation in `expect(async () => {...}).toPass()`
+  so it retries the goto itself instead of guessing a longer fixed delay; re-verified with an
+  isolated 3-browser run afterward - 3/3 passed clean, 0 retries needed.
+- **auth/006 is not 100%-deterministic on webkit:** failed once, then passed on retry with no
+  console errors that attempt - the only time across both full runs this session that it hasn't
+  failed outright. Issue 1's underlying bug is still real (chromium and firefox failed
+  deterministically both times), but the console error appears to be a timing-dependent race
+  rather than guaranteed on literally every logout on every engine. Noted as a refinement to
+  Issue 1 below, not a new issue.
+- **One likely-unrelated flake:** `registration/004_step1-duplicate-phone-rejected` failed once on
+  webkit only (the duplicate-phone-number API check took longer than the test's 5s default
+  timeout), then passed cleanly on retry in 7.4s. Most likely ordinary backend response-time
+  variance late in a 31+ minute run rather than a new defect - flagged here for visibility, not
+  escalated to a numbered issue, since a single occurrence with no error message and a clean retry
+  isn't enough to call it reproducible.
+
 ## 4. Defects Log
 
 ### Issue 1 - Console error on logout (CORS-blocked RSC fetch)
@@ -285,6 +316,12 @@ run, not a one-time snapshot.
   `tests/fueni-test/auth/006_logout-no-console-errors.spec.ts` (currently failing, as designed).
 - **Recommendation:** avoid an RSC-fetch-based navigation for a redirect target known to be
   cross-origin, or add CORS headers on the Keycloak side.
+- **Refinement (Session 9, 2026-08-20):** across two full 3-browser runs today, `auth/006` failed
+  deterministically on chromium and firefox every time, but on webkit it failed once and then
+  passed cleanly (no console errors) on an immediate retry. The underlying bug is still real and
+  still open - this just means the console error is a timing-dependent race on at least one
+  engine rather than a guaranteed outcome of every single logout everywhere, which is worth
+  knowing if this test's failure rate is ever used as a proxy for how often real users hit it.
 
 ### Issue 2 - AC1 description didn't match actual empty-field validation behavior
 - **Severity:** Documentation only, not a product defect.

@@ -93,11 +93,16 @@ test.describe('Long session - multi-domain journey', () => {
       // fetch that falls back to a full navigation (Issue 1), and can be slower still after a
       // long session with many prior navigations. See Issue 3 for why this isn't tightened.
       await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
-      // The login page is still settling immediately after the redirect lands (Issue 1's
-      // fallback full-navigation can still be in flight) - issuing a second goto right away
-      // races it and gets cancelled with net::ERR_ABORTED. Let it settle first.
-      await page.waitForLoadState('load');
-      await page.goto('/fr/dashboard');
+
+      // Issue 1's CORS-fallback can still be mid-navigation (sometimes more than one
+      // redirect deep) right after the URL first lands on /login - a `page.goto` issued too
+      // early races it and gets cancelled (`net::ERR_ABORTED` / `NS_BINDING_ABORTED`).
+      // `waitForLoadState('load')` alone isn't a reliable enough signal that the chain is
+      // truly done (confirmed live: still flaked across all 3 browsers with just that wait),
+      // so retry the navigation itself rather than guess a longer fixed delay.
+      await expect(async () => {
+        await page.goto('/fr/dashboard');
+      }).toPass({ timeout: 15_000 });
       await expect(page).toHaveURL(/\/login/);
     });
   });
