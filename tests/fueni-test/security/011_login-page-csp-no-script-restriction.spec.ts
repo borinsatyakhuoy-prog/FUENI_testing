@@ -15,6 +15,9 @@ import { test, expect } from '@playwright/test';
  * attack, with even less CSP coverage than the app pages behind login. This is a live
  * regression check, not skipped - it will start passing once the Keycloak theme's CSP adds an
  * explicit script-src or default-src directive.
+ *
+ * Improvement note: fix alongside security/010 as one CSP-hardening effort rather than two
+ * separate patches - see defects/improvement/security-hardening-followups.md.
  */
 test.describe('Content-Security-Policy hardening - login page', () => {
   test('the login page CSP restricts script execution (script-src or default-src present)', async ({

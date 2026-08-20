@@ -8,6 +8,10 @@ import { test, expect } from '@playwright/test';
  * directly. This is a regression lock, not a gap-driven test: the goal is to catch an
  * accidental removal/weakening of these headers in a future deploy, not to fix anything
  * today - they're already solid.
+ *
+ * Improvement note: no code change needed here; good candidate to extend to a couple more
+ * high-traffic routes (dashboard, admin login) rather than just /fr/login. See
+ * defects/improvement/automated-suite-expansion.md.
  */
 test.describe('Response security headers', () => {
   test('the login page response carries baseline security headers', async ({ page }) => {

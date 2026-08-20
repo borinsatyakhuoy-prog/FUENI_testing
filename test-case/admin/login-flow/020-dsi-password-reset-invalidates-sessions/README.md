@@ -19,3 +19,8 @@ reachable from this single-account, single-session exploration.
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+Same underlying gap as test case 010's second half - see
+`defects/improvement/test-account-provisioning.md`. Needs a second controllable session plus
+real DSI-side password-reset access; resolving the provisioning gap once unblocks both cases.

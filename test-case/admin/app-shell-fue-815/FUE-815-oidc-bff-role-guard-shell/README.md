@@ -33,3 +33,8 @@ screenshot, not specifically for the language finding it's also referenced from)
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - this is a solid foundation (real BFF session, server-enforced role guard, real
+POST+CSRF logout). Strong candidate to be the first admin flow ported into the permanent
+automated suite; see `defects/improvement/automated-suite-expansion.md`.

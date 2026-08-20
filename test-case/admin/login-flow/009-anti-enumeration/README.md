@@ -22,3 +22,8 @@ copy match is not.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Get the actual "§9" source document from the FUENI team so the exact wording can be
+cross-checked, not just the behavior. Track this alongside the other retention/copy-verification
+gaps in `defects/improvement/test-account-provisioning.md`-adjacent documentation requests.

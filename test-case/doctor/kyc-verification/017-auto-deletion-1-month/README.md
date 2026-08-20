@@ -22,3 +22,9 @@ guessed at.
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+Blocked on two provisioning gaps at once (a reviewer-side "request corrections" action, and real
+elapsed time). Prioritize getting admin/DSI reviewer access into the test environment first (see
+`defects/improvement/test-account-provisioning.md`) since that unblocks other admin-review-flow
+cases too, not just this one.

@@ -22,3 +22,7 @@ activation) regardless of any CSS styling. See
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation (including direct DOM/JS
 inspection via `page.evaluate`) - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - real `disabled` controls are exactly the right implementation. Good reference
+pattern for any other locked/restricted UI elsewhere in the app.

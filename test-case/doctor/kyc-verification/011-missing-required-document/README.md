@@ -21,3 +21,7 @@ error shown is on the missing document slot: "Ce champ est obligatoire." See
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - this is a good pattern (isolated, unambiguous, single blocking error) worth using
+as the reference when reviewing validation UX elsewhere in the app.

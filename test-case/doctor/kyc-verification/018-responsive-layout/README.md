@@ -19,3 +19,7 @@ adapted layout at all sizes rather than gating any of them.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - this is the pattern the admin console should be held to. See
+`defects/improvement/responsive-design-policy.md` for the cross-app inconsistency this highlights.

@@ -25,3 +25,7 @@ See `admin-000-login-page-ui.png`.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - clean, unambiguous pass. Good candidate for a permanent automated smoke test since
+it's a static-content check (realm name, absence of links) with no OTP/timing dependency.

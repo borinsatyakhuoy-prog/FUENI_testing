@@ -18,3 +18,8 @@ mailto DSI link, no signup link). See `admin-000-login-page-ui.png`.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - the restricted-zone framing and compliance badges are a good pattern for an admin
+surface. Good candidate for a permanent automated smoke test (see
+`defects/improvement/automated-suite-expansion.md`).

@@ -22,3 +22,8 @@ mandatory - needs the real spec to resolve; not asserted as definitely wrong.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Get an explicit product decision on whether the ID document should be mandatory. Whichever way
+it's resolved, update either the app or this test case's own wording - leaving the mismatch open
+means future QA passes will keep re-flagging the same ambiguity.

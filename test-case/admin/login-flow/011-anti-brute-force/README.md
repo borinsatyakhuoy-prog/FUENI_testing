@@ -30,3 +30,10 @@ trip the lockout on this one.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Get explicit sign-off to intentionally trip the lockout on a disposable account (not the only
+working admin account) so the real threshold and IP-based layer can be confirmed. This is a
+second, independent reason to prioritize
+`defects/improvement/test-account-provisioning.md` - it's not just about reaching first-login
+states, it's also needed for safe destructive-style security testing like this.

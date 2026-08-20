@@ -19,3 +19,9 @@ faster than the snapshot/screenshot timing used here.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Re-check with devtools/network open and a slightly longer capture window in case a toast fires
+and auto-dismisses quickly. Ties into the broader feedback-messaging gap tracked in
+`defects/improvement/inconsistent-feedback-messaging.md` - if there truly is no success toast,
+add one there too for consistency with other confirmed-success moments in the app.

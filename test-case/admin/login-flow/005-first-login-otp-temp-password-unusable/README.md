@@ -18,3 +18,9 @@ temporary-password first-login state at all this session).
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+Same blocker as test case 001 - see `defects/improvement/test-account-provisioning.md`. This one
+specifically also needs the ability to attempt a login with the *old* temporary password after
+the flow completes, so make sure whatever provisioning path is set up leaves that temp password
+recorded/reusable for the negative check.

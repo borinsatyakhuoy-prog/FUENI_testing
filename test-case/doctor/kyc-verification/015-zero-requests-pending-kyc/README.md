@@ -23,3 +23,7 @@ actual absence of those API calls, not just a display-layer hide.
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation (network log inspected via the
 browser tool's request log) - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - confirmed no premature data access. Good candidate for an automated regression
+test given how cheap it is to check (a network-request assertion, no UI interaction needed).

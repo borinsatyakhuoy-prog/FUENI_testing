@@ -23,3 +23,8 @@ code, and no hidden/disabled "skip" affordance found in the DOM. See
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - the admin realm being stricter than the doctor realm here (no device-trust
+bypass) is the right call for an admin surface. Worth calling out to product as a positive
+finding, not just logging it as a pass.

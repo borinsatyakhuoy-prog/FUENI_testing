@@ -18,6 +18,9 @@ import { login } from '../helpers/auth';
  * misconfigured subdomain, or a user's very first request before HSTS is cached). This is a live
  * regression check, not skipped - it will start passing automatically once the cookie is set
  * with `Secure`.
+ *
+ * Improvement note: see defects/improvement/security-hardening-followups.md for where this sits
+ * in the recommended fix order (grouped with the CSP gaps below, after the audit-identity issue).
  */
 test.describe('Session cookie hardening', () => {
   test('the patient app SESSION cookie is marked Secure', async ({ page, context }) => {

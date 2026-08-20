@@ -18,3 +18,8 @@ dashboard loads normally with all stat cards at zero - see `001-pending-kyc-dash
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+The "Vérification en cours" status is currently only fully explained inside the dashboard modal.
+Consider surfacing the expected review timeline (already shown as "Délai max : 2 jours ouvrés"
+elsewhere) directly in the sidebar status label too, so it's visible without opening the modal.

@@ -17,3 +17,7 @@ file-upload controls themselves. See `000-ui-kyc-verification/000-kyc-form-initi
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - this matches the expected behavior. Worth documenting explicitly as confirmed
+intended behavior (e.g. in the KYC spec) so it isn't mistaken for an oversight later.

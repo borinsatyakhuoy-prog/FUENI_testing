@@ -21,3 +21,8 @@ session, so nothing was guessed at or fabricated.
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+Request the reminder-email copy and deletion-timing spec directly from the FUENI team, and/or
+have them fast-forward a test account's `createdAt` in a lower environment so this can actually
+be verified without waiting 14 real days. See `defects/improvement/test-account-provisioning.md`.

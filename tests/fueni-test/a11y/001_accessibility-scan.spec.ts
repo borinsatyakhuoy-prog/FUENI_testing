@@ -19,6 +19,9 @@ async function gotoLoginAndSettle(page: import('@playwright/test').Page) {
  * axe-core's tag filter, on one pre-auth and one authenticated page. Not exhaustive (a full a11y
  * audit would cover every page), but establishes the pattern and a live regression check for the
  * two highest-traffic pages.
+ *
+ * Improvement note: extend this same pattern to the doctor and admin apps' equivalent pages next
+ * (currently zero a11y coverage there too) - see defects/improvement/automated-suite-expansion.md.
  */
 test.describe('Accessibility', () => {
   test('login page has no WCAG 2.1 A/AA violations', async ({ page }) => {

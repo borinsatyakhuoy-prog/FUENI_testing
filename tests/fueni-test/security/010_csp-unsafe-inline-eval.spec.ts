@@ -16,6 +16,9 @@ import { login } from '../helpers/auth';
  * just weakened by these two keywords. This is a live regression check, not skipped - it will
  * start passing once script-src drops both keywords (typically via a nonce/hash-based CSP
  * instead).
+ *
+ * Improvement note: fix alongside security/011 as one CSP-hardening effort rather than two
+ * separate patches - see defects/improvement/security-hardening-followups.md.
  */
 test.describe('Content-Security-Policy hardening - authenticated app', () => {
   test('the authenticated app script-src does not allow unsafe-inline or unsafe-eval', async ({

@@ -23,3 +23,8 @@ screenshots are duplicated here for convenience.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Get an explicit, documented decision on whether mobile-blocking is the intended policy for the
+admin console. See `defects/improvement/responsive-design-policy.md` - the current behavior may
+be entirely correct, but nothing today distinguishes "intentional" from "not yet built."

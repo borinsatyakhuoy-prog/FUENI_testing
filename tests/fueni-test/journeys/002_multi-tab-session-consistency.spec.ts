@@ -10,6 +10,9 @@ const PREFS_ENDPOINT = '/api/v1/patients/me/notification-preferences';
  * mutation made in one tab is visible from the other after a reload - not just held in one tab's
  * local UI state. No existing spec checks cross-tab consistency; profile/005 only ever checks a
  * single page reloading itself.
+ *
+ * Improvement note: none needed - this is a clean, low-risk pattern (real mutation, reverted at
+ * the end) worth reusing for other server-persisted toggles as they're found.
  */
 test.describe('Long session - multi-tab consistency', () => {
   test('a real, persisted mutation made in one tab is visible from a second tab, and reverts cleanly in both', async ({

@@ -22,3 +22,8 @@ observations rather than picking one.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Add a persistent support link to the upload form itself, not just the post-submission status
+screen - a user stuck mid-form (e.g. blocked by the silent file-type rejection in test case 005)
+currently has no escape hatch on that same screen.

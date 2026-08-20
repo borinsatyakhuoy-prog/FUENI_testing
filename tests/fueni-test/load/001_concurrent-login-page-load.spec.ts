@@ -20,6 +20,11 @@ import { installPerformanceObservers, capturePageLoadSample, summarize } from '.
  *   ceiling. Raise it only with the infra/FUENI team's awareness.
  * - Stops the ramp early the moment error-rate or P90 degradation crosses the stop conditions
  *   below, rather than always running to the cap.
+ *
+ * Improvement note: this probe can't distinguish real server-side throttling from local
+ * browser-process contention on the machine running the suite. If real capacity numbers are ever
+ * needed, use dedicated load-testing tooling (k6/artillery) from a separate process instead - see
+ * defects/improvement/load-testing-tooling-gap.md.
  */
 const MAX_CONCURRENCY = 15;
 const RAMP_STEPS = [5, 10, MAX_CONCURRENCY];

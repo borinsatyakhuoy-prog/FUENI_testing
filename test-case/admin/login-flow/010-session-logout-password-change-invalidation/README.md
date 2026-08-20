@@ -24,3 +24,9 @@ current tab/client state.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+The password-change-invalidation half is blocked on the same account-provisioning gap as test
+case 020 - see `defects/improvement/test-account-provisioning.md`. Resolving that unblocks both
+cases at once since they need the same thing: a second controllable admin session plus a way to
+trigger a real password reset against it.

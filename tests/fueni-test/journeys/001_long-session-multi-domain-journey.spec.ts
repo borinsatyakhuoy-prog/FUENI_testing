@@ -11,6 +11,10 @@ const PREFS_ENDPOINT = '/api/v1/patients/me/notification-preferences';
  * - state that leaks between pages, auth that silently drops partway through, or a mutation on
  * one page affecting what a later, unrelated page renders. None of the per-action specs can
  * catch this class of bug, since each of them starts from a fresh login.
+ *
+ * Improvement note: this pattern only exists for the patient app so far - once doctor/admin test
+ * accounts are easier to provision (defects/improvement/test-account-provisioning.md), consider a
+ * doctor-role equivalent that carries a session across KYC status changes and dashboard views.
  */
 test.describe('Long session - multi-domain journey', () => {
   test('a single session survives dashboard -> profile edit/cancel -> security -> full sidebar sweep -> a real reverted mutation -> logout', async ({

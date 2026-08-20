@@ -22,3 +22,10 @@ duration can't be verified in real time regardless of which claim is accurate.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+The DPO sign-off on the real retention period should come first, then both copy locations (login
+page and audit-log page) should be updated to state the same confirmed value. See
+`defects/admin-audit-retention-policy-contradiction/README.md` for the fix recommendation and
+`defects/improvement/security-hardening-followups.md` for where this sits in the broader
+priority order.

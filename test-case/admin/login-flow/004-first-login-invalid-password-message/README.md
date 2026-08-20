@@ -15,3 +15,7 @@ A clear, specific message explaining why the password was rejected.
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+Same blocker as test case 001 - see `defects/improvement/test-account-provisioning.md`. No
+separate action needed beyond resolving that.

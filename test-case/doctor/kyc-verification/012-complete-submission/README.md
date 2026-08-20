@@ -19,3 +19,6 @@ redirected to the dashboard with status "Vérification en cours" (`012-submissio
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - clean success path end-to-end.

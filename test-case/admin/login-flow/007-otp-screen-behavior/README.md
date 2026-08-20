@@ -24,3 +24,8 @@ Matches expected on every point:
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - clean, well-implemented flow. Good candidate to automate first given how reliably
+it passed (see `defects/improvement/automated-suite-expansion.md`); would need the temp-mail OTP
+retrieval step wired into the automated suite, not just the interactive browser session.

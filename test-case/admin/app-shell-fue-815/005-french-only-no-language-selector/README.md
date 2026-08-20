@@ -27,3 +27,9 @@ directly contradicting "no reachable /en/ admin URL".
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Decide deliberately between two consistent options: either add a visible language selector (so
+`/en` becomes discoverable, matching the patient/doctor apps), or actually block `/en` server-side
+if French-only is the intended policy for admin. The current middle state - reachable but
+undiscoverable - is the worst of both and reads as an oversight rather than a decision.

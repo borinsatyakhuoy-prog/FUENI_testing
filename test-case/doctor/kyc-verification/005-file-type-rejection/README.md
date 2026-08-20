@@ -26,3 +26,10 @@ Both should be rejected, each with a clear, user-visible error message explainin
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Add a visible error message when a file is rejected (see
+`defects/improvement/inconsistent-feedback-messaging.md`). Separately, once explicit sign-off
+exists, consider a staging-safe malware-scan test path (e.g. an EICAR test string against a
+non-production scanning endpoint) so the infected-file half of this test case can eventually be
+covered too.

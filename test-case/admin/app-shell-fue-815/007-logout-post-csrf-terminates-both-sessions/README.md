@@ -29,3 +29,8 @@ Matches expected on all three points:
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation (network request inspection via the
 browser tool's request log, including headers) - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - this is the reference-quality logout implementation (real POST, CSRF token, full
+SSO termination). Good candidate for an early automated regression test given how cheap it is to
+assert (method + header + post-logout redirect check, no OTP dependency).

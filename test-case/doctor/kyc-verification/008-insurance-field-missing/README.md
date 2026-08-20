@@ -21,3 +21,8 @@ this session.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+Confirm with product whether this field is planned for a future sprint or was dropped from
+scope. If planned, prioritize it since it's explicitly referenced in the retested requirements
+list, suggesting it's expected sooner rather than later.

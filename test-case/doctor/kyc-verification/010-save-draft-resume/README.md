@@ -42,3 +42,9 @@ Chromium only, via interactive Playwright browser automation - not yet cross-bro
 "cross-device" aspect specifically wasn't tested with an actually different device/browser
 profile, but a full logout + fresh login + fresh OTP is a strong proxy for that, since it rules
 out any client-side-only persistence mechanism.
+
+## Improvement suggestion
+Add a visible "Draft saved" confirmation (currently silent - see
+`defects/improvement/inconsistent-feedback-messaging.md`), ideally with a "last saved at HH:MM"
+indicator so users have ongoing confidence their work is preserved, not just at the moment they
+click the button.

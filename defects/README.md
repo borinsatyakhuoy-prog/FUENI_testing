@@ -9,6 +9,11 @@ index is kept up to date as defects are added.
 Tracked in git alongside `tickets/` (see history - both were briefly gitignored early on, now
 committed so findings survive across machines/sessions).
 
+See `improvement/README.md` for the cross-cutting **improvement plan** synthesized after the
+regression reruns and role retests - forward-looking themes (e.g. "no way to provision a
+temp-password admin account") that group multiple individual defects/test-case findings together,
+rather than a confirmed single bug.
+
 ## Index
 
 | Defect | App/Role | Severity | Status | Details |

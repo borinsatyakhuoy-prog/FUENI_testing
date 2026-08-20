@@ -8,6 +8,10 @@ import { login } from '../helpers/auth';
  * sustained client-side routing (stale cache, a memory leak surfacing as broken state, or auth
  * silently dropping partway through a long chain) rather than a handful of hops. Read-only
  * throughout - safe to run alongside anything else touching this account.
+ *
+ * Improvement note: none needed - read-only and safe to run freely. Could be extended with a
+ * couple of tab-close/reopen hops if a real bug report ever points at session state surviving
+ * that specific transition.
  */
 test.describe('Long session - back/forward navigation endurance', () => {
   test('a long, winding back/forward chain across real and placeholder pages never renders stale or broken content', async ({

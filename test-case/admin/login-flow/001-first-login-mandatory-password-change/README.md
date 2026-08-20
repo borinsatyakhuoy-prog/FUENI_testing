@@ -24,3 +24,10 @@ action on an existing account.
 
 ## Browser(s) tested
 Not applicable - this test case was not reached.
+
+## Improvement suggestion
+This is the root blocker for test cases 001-005 as a group. See
+`defects/improvement/test-account-provisioning.md` - request either a disposable
+temporary-password admin account from the DSI, or realm-admin access to set a Keycloak
+`UPDATE_PASSWORD` required action on a throwaway account, so this whole cluster can be verified
+in one pass instead of staying open indefinitely.

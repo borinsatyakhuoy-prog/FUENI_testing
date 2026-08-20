@@ -21,3 +21,8 @@ layout, no console errors observed.
 Chromium only, via interactive Playwright browser automation (not the automated
 chromium/firefox/webkit suite runs used elsewhere in this project) - not yet cross-browser
 tested.
+
+## Improvement suggestion
+None needed for this case specifically. Given how form-heavy this screen is, consider adding a
+lightweight visual-regression baseline for it once it's automated, so future layout changes get
+caught without needing a full manual re-verification pass like this one.

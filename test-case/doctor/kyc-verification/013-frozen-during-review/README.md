@@ -21,3 +21,7 @@ element.
 
 ## Browser(s) tested
 Chromium only, via interactive Playwright browser automation - not yet cross-browser tested.
+
+## Improvement suggestion
+None needed - the server-side enforcement here is solid and worth using as the reference pattern
+when reviewing other "locked after submission" flows across the app.
