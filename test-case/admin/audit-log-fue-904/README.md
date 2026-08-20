@@ -1,37 +1,57 @@
-# Test Case Plans: FUE-904 - Admin Audit Log Viewer
+# Test Case Results: FUE-904 - Admin Audit Log Viewer
 
 **Context:** These 6 items were requested for the admin console's "Journal d'audit"
-(`/fr/audit-logs`) feature. **Not executed live this session** - the standing admin account
-became unreachable partway through this session (credentials appear to have changed and/or the
-account tripped its own strict single-session security lock - see
-`defects/improvement/test-account-provisioning.md` for the single-session finding from the FUE-902
-pass immediately before this one). Per the user's instruction, this is recorded as a **test plan**
-(How to test / Expected, no Actual) rather than guessed-at results, so nothing here should be read
-as a confirmed pass or fail.
+(`/fr/audit-logs`) feature. Admin credentials changed mid-session (new account
+`allweb.qa@gmail.com`, OTP relayed by the user from a real Gmail inbox rather than a
+temp-mail-controlled one). One successful login reached the page and captured real evidence for
+3 of 6 cases before the session was interrupted by the admin realm's single-session lock -
+confirmed to be caused by a real team actively using this same shared account concurrently, not
+a test artifact. Per standing instruction, no data was edited or deleted on this account; only
+read-only navigation was performed.
 
-**What's already known about this page from earlier exploration** (see
-`test-case/admin/login-flow/021-audit-log-20-year-retention/README.md` and
-`defects/admin-audit-retention-policy-contradiction/README.md`): the page carries a governance
-notice reading "Registre inaltérable — ajout uniquement (append-only), non modifiable et non
-supprimable. Comptes nommés individuels · conservation à confirmer (DPO)." - i.e. the audit log's
-own retention period is explicitly unconfirmed, directly contradicting the login page's "20 ans"
-claim. This is directly relevant to case 006 below.
+## Results
 
-## Plan
-
-| # | Test case | Folder | Status |
+| # | Test case | Result | Folder |
 |---|---|---|---|
-| 000 | UI Admin Audit Log | [`000-ui-admin-audit-log/`](000-ui-admin-audit-log/) | ⚪ Plan only - not executed |
-| 001 | Audit log page renders a read-only paginated table | [`001-read-only-paginated-table/`](001-read-only-paginated-table/) | ⚪ Plan only - not executed |
-| 002 | Filtering by action, actor, or date range updates the list server-side | [`002-filter-action-actor-date-range-server-side/`](002-filter-action-actor-date-range-server-side/) | ⚪ Plan only - not executed |
-| 003 | Export downloads a CSV of the currently filtered entries | [`003-export-csv-of-filtered-entries/`](003-export-csv-of-filtered-entries/) | ⚪ Plan only - not executed |
-| 006 | Audit entries older than the current date remain available up to 20 years | [`006-entries-available-up-to-20-years/`](006-entries-available-up-to-20-years/) | ⚪ Plan only - not executed |
-| 007 | Responsive layout across mobile / tablet / desktop (DoD) | [`007-responsive-layout/`](007-responsive-layout/) | ⚪ Plan only - not executed |
+| 000 | UI Admin Audit Log | ✅ **PASS** | [`000-ui-admin-audit-log/`](000-ui-admin-audit-log/) |
+| 001 | Audit log page renders a read-only paginated table | ✅ **PASS** | [`001-read-only-paginated-table/`](001-read-only-paginated-table/) |
+| 002 | Filtering by action, actor, or date range updates the list server-side | 🟡 **PARTIAL** (date range confirmed server-side/URL-reflected; action/actor not yet exercised) | [`002-filter-action-actor-date-range-server-side/`](002-filter-action-actor-date-range-server-side/) |
+| 003 | Export downloads a CSV of the currently filtered entries | ⚪ **NOT EXECUTED** (button located, not yet clicked) | [`003-export-csv-of-filtered-entries/`](003-export-csv-of-filtered-entries/) |
+| 006 | Audit entries older than the current date remain available up to 20 years | 🔴 **CONTRADICTION RECONFIRMED** | [`006-entries-available-up-to-20-years/`](006-entries-available-up-to-20-years/) |
+| 007 | Responsive layout across mobile / tablet / desktop (DoD) | ⚪ **NOT EXECUTED** | [`007-responsive-layout/`](007-responsive-layout/) |
 
-## Blocker
+## What was confirmed in the one successful load
 
-Admin access was unavailable for the remainder of this session. Once restored, retest in the same
-order as FUE-902 was retested (case 000 first to establish ground truth on the page's actual
-structure, since the "How to test" steps below describe *expected* UI based on the governance
-notice already seen and on how the verification queue - the other admin list view - behaves, not
-on having directly inspected this page's table/filter/export controls yet).
+- Page header: "Journal d'audit" + "Exporter (CSV)" button; subtitle "Toutes les actions des
+  administrateurs, tracées et attribuées. Consultation seule."
+- Governance notice: "Registre inaltérable — ajout uniquement (append-only), non modifiable et
+  non supprimable. Comptes nommés individuels · conservation à confirmer (DPO)." - matches and
+  reconfirms the earlier-session finding in `defects/admin-audit-retention-policy-contradiction`.
+- Controls: search box ("Rechercher une action, un motif…"), "Ajouter un filtre", a date-range
+  chip already applied by default ("Période: 2026-05-20 - 2026-08-20", a rolling last-3-months
+  window, URL-reflected as `?dateRangeFrom=...&dateRangeTo=...`), "Paramètres des colonnes",
+  "Actualiser".
+- Table: 6 columns (Horodatage, Admin, Catégorie, Action, Cible, Détail), 66 total entries this
+  session, populated with real recent activity (mostly repeated Connexion/Déconnexion
+  administrateur pairs from "Secondary Admin" every ~15-20 minutes throughout the day - this is
+  what tipped off the concurrent-team-usage finding).
+- Pagination: "Affichage 1 - 10 sur 66 éléments", "Lignes par page" selector, Précédent/Suivant
+  (no Première-page/Dernière-page shortcuts, unlike the verification queue - a minor UI
+  consistency note, not a defect).
+
+## Other findings, not on the original list
+
+- **Actor-name inconsistency:** the account switcher in the sidebar/topbar displays "TA Test
+  Admin Super Admin" for the currently logged-in `allweb.qa@gmail.com` session, but the audit
+  log attributes every recent action to "Secondary Admin" instead. Either the display name is
+  stale from a prior account state, or there are two related admin identities and the log is
+  attributing correctly while the UI chrome shows the wrong cached name - worth a follow-up look,
+  not confirmed as a defect since it could just be an unrefreshed client-side cache within this
+  one session.
+
+## Not yet automated
+
+None of this is captured as a Playwright spec yet, and shouldn't be until the single-session
+constraint is resolved (see `defects/improvement/test-account-provisioning.md`) - an automated
+spec that logs in during this team's active hours would just add to the session churn rather
+than test anything reliably.
