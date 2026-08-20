@@ -248,6 +248,17 @@ escalation set in.
     Turnstile-gated test attempts on the same day - the tests are already correctly designed
     (generous timeouts, documented caveats); the only real fix is the Cloudflare test-key/IP-
     allowlist ask already drafted in `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`.
+  - **Reconfirmed a second time, same session (immediate full-suite rerun, chromium only):**
+    re-running the entire chromium suite again straight after (no cool-down at all) reproduced
+    the *exact same 6 failures* - `auth/004`, `005`, `006`, `008`, `014`, and `registration/002` -
+    with everything else (50 of 56 runnable tests) passing cleanly, including `auth/010`'s earlier
+    one-off flake, which passed outright this time. `registration/002`'s three attempts this run
+    illustrate the split: 2 of 3 never got past the account-creation Turnstile check at all
+    ("Étape 2 / 3" never appeared), while the 1 attempt where Turnstile did clear again stalled on
+    the SMS-dispatch confirmation text - consistent with the distinct symptom noted above, and
+    now confirmed to recur rather than being a one-off. This is the strongest evidence yet that
+    the failing set is stable and fully attributable to the anti-automation control, not to any
+    test flakiness or product regression - no test code was touched.
 
 ### Issue 4 - "Notifications" bell button is a dead UI element (new, 2026-08-18)
 - **Severity:** Low/Medium (missing functionality, not a crash - no console error, no broken
