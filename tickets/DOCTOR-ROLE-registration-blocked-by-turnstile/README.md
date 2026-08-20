@@ -1,6 +1,22 @@
 # Ticket: Doctor-role automated test suite is blocked at account creation (Turnstile + manual KYC)
 
-**Verdict:** Open, and as of 2026-08-19 more blocked than before - the durable Session 5 account is
+**Verdict:** **Partially resolved, 2026-08-20** - a fresh registration attempt (new
+temp-mail-controlled account, password persisted correctly this time) completed **end-to-end
+with no Turnstile block encountered at any step**, reaching the PENDING_KYC dashboard and a full
+KYC submission successfully. See `test-case/doctor-kyc-verification/README.md` for the full
+retest (16 items) this unblocked. The original Session 5 account (`FUENI_PRO_EMAIL`) is still
+stuck at OTP for the reason below, but that account is no longer the only path forward - a fresh
+account can now reach PENDING_KYC without hitting Turnstile. **Not fully closing this ticket**
+since it's unclear whether the Turnstile pass was a genuine fix, an invisible/managed-mode silent
+pass, or Issue 3's escalation having cooled down since the last heavy-traffic session - a single
+successful attempt isn't proof the block can never recur. Original 2026-08-19 write-up preserved
+below for context.
+
+---
+
+### Original write-up (2026-08-19, superseded above for the registration-blocker specifically)
+
+Open, and as of 2026-08-19 more blocked than before - the durable Session 5 account is
 now also stuck at OTP (its temp-mail login password was never persisted; see below), and the
 ad-hoc KYC-approved account is no longer available. Blocked on either the Cloudflare test-key ask
 (see `tickets/CLOUDFLARE-TURNSTILE-CI-testkey-request`) or someone with Keycloak/database access

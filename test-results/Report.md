@@ -28,8 +28,8 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Metric | Count |
 |---|---|
 | Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 64 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe + 6 added in Session 11 - security headers/cookie/CSP regression locks and a first a11y scan); cross-browser run counts (171/177) predate the Session 11 continued additions - a fresh full run would land around 183-186 |
-| Passing reliably | 150-153/177 (84.7-86.4%) across all 3 browsers over 2 full reruns (Sessions 9-10, no code changes between them) - see below for why the cross-browser rate is lower than the chromium-only 92.9% baseline, and why the exact count shifts slightly run to run |
+| Automated test cases executed | 66 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 + 6 added in Session 11 + 2 added in Session 13 - a multi-tab consistency journey and a long back/forward navigation endurance journey); full 3-browser rerun in Session 13 confirms 195 runs (66 × 3 - 3 for the seed test's single-count) |
+| Passing reliably | 157/195 (80.5%) as of the Session 13 full rerun (66 tests × 3 browsers) - all 18 failures are already-documented live-by-design regression checks (Issues 1/10/11 + Session 11 security/a11y additions), none new. Earlier reruns (Sessions 9-10, 177 tests before the Session 13 additions) landed at 150-153/177 (84.7-86.4%) - the rate shifts slightly run to run and drops further as more intentionally-failing regression checks are added; see below for why the cross-browser rate is lower than the chromium-only 92.9% original baseline |
 | Failing by design (documents a real, open defect) | 2 (auth/006, plus the new webkit-specific auth/010 instability - Issue 11) |
 | Blocked by an external anti-automation control (Cloudflare Turnstile/escalation) | 5 tests × 3 browsers - as of Session 8 these are marked **skipped** (not failed), each with an inline reason, rather than left as red failures for a condition no test-side fix can address (see Issue 3) |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
@@ -384,6 +384,46 @@ Found a real, systemic WCAG 2 AA `color-contrast` failure - see
 design token (4.1-4.46:1 against various backgrounds, just under the 4.5:1 minimum) plus one
 more severely non-compliant caption style (2.56:1). Both live regression tests are currently
 failing, by design.
+
+### Session 13 (2026-08-20) - full rerun with all additions, 2 new journey tests, doctor-role retest
+
+**Full 3-browser rerun** (195 tests - 171 base + the 2 new journey tests below + the 6 Session 11
+security/a11y additions, all ×3 browsers): **157 passed, 18 failed, 2 flaky, 18 skipped, 38.3m**.
+All 18 failures are already-documented, live-by-design regression checks (Issues 1/10/11, and the
+Session 11 security/a11y additions) - no new defects surfaced by this rerun itself. Two notable
+cross-run observations:
+- **auth/006 (Issue 1) and auth/010 (Issue 11) again shifted which browsers failed hardest** -
+  further confirming both are genuine runtime-dependent races, not fixed per-engine behavior (see
+  Issue 1's and Issue 11's own "Session 9/10" updates for the established pattern).
+- **The load/stress probe's worst result yet, webkit-only:** 4 of 5 requests errored (80%) at the
+  lightest possible concurrency (5) - worse than any prior run. Since this test runs late in a
+  ~150-test-long webkit browser-process lifetime, cumulative browser-process resource pressure
+  from everything that ran before it in the same suite is now a plausible confound alongside the
+  existing "local resource contention vs. server throttling" ambiguity - noted in
+  `tests/fueni-test/load/001_concurrent-login-page-load.spec.ts`'s own results, not yet
+  investigated further.
+
+**Two new long-scenario journey tests added**, both read-only or using the already-vetted-safe
+notification toggle (no new Turnstile exposure, no new real-data risk):
+- `journeys/002_multi-tab-session-consistency.spec.ts` - opens a second tab in the same
+  authenticated context, confirms a real mutation made in one tab is visible from the other after
+  a reload, and reverts cleanly from either tab. No existing spec checked cross-tab consistency.
+- `journeys/003_long-back-forward-navigation-endurance.spec.ts` - a 12-hop, non-linear
+  back/forward chain across real and placeholder pages in one session (vs. navigation/008's
+  4-hop check) - authoring it surfaced a real off-by-one indexing bug in the test itself (fixed
+  before committing, not a product defect). Both verified passing on all 3 browsers; deliberately
+  run only after confirming the full-suite rerun above had cleared the same shared account's
+  toggle-touching tests, to avoid racing them.
+
+**Doctor-role retest, first-ever reachable KYC screen:** a fresh registration attempt (new
+temp-mail account, unlike the stuck `FUENI_PRO_EMAIL`) completed end-to-end with **no Turnstile
+block encountered** - see the major update in
+`tickets/DOCTOR-ROLE-registration-blocked-by-turnstile`. This unblocked a full manual retest
+against 16 requested KYC test case IDs - see `test-case/doctor-kyc-verification/README.md` for
+the complete results (9 pass, 2 spec mismatches now in
+`defects/doctor-kyc-form-field-mismatches`, 3 partial, 2 not testable in real time). This is the
+first real evidence of the doctor-role dashboard/KYC screen at all, and opens the door to a real
+automated doctor-role suite going forward.
 
 ## 4. Defects Log
 
