@@ -6,12 +6,12 @@ SLA thresholds: TTFB ≤ 800ms, FCP ≤ 1800ms, LCP ≤ 2500ms, full page load �
 
 | Page | URL | Samples | TTFB (p90) | FCP (p90) | LCP (p90) | Load (p90) | Load SLA |
 |---|---|---|---|---|---|---|---|
-| Login | `/fr/login` | 15 | 0ms | 611ms | 694ms | 135ms | ✅ PASS |
-| Registration (step 1) | `/fr/register` | 15 | 83ms | 214ms | 333ms | 233ms | ✅ PASS |
-| Dashboard | `/fr/dashboard` | 15 | 343ms | 529ms | 529ms | 643ms | ✅ PASS |
-| Mon profil | `/fr/my-profile` | 15 | 411ms | 557ms | 557ms | 589ms | ✅ PASS |
-| Connexion & Sécurité | `/fr/security` | 15 | 255ms | 410ms | 410ms | 423ms | ✅ PASS |
-| Coming-soon placeholder (Mes RDV) | `/fr/appointments` | 15 | 277ms | 423ms | 423ms | 427ms | ✅ PASS |
+| Login | `/fr/login` | 15 | 0ms | 678ms | 768ms | 178ms | ✅ PASS |
+| Registration (step 1) | `/fr/register` | 15 | 143ms | 276ms | 412ms | 307ms | ✅ PASS |
+| Dashboard | `/fr/dashboard` | 15 | 441ms | 615ms | 615ms | 778ms | ✅ PASS |
+| Mon profil | `/fr/my-profile` | 15 | 294ms | 478ms | 478ms | 498ms | ✅ PASS |
+| Connexion & Sécurité | `/fr/security` | 15 | 235ms | 375ms | 375ms | 419ms | ✅ PASS |
+| Coming-soon placeholder (Mes RDV) | `/fr/appointments` | 15 | 276ms | 387ms | 387ms | 405ms | ✅ PASS |
 
 ## Full distribution (min / P50 / P90 / P95 / P99 / max), in ms
 
@@ -19,58 +19,58 @@ SLA thresholds: TTFB ≤ 800ms, FCP ≤ 1800ms, LCP ≤ 2500ms, full page load �
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 0 | 0 | 0 | 11 | 32 | 37 |
-| DOM Content Loaded | 95 | 124 | 134 | 136 | 138 | 138 |
-| First Contentful Paint | 494 | 577 | 611 | 618 | 627 | 629 |
-| Largest Contentful Paint | 617 | 659 | 694 | 699 | 704 | 705 |
-| Full page load | 96 | 125 | 135 | 137 | 139 | 139 |
+| TTFB | 0 | 0 | 0 | 12 | 34 | 40 |
+| DOM Content Loaded | 122 | 137 | 176 | 195 | 197 | 197 |
+| First Contentful Paint | 489 | 655 | 678 | 691 | 706 | 710 |
+| Largest Contentful Paint | 489 | 745 | 768 | 782 | 798 | 802 |
+| Full page load | 123 | 138 | 178 | 197 | 198 | 198 |
 
 ### Registration (step 1)
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 0 | 40 | 83 | 88 | 95 | 97 |
-| DOM Content Loaded | 86 | 120 | 177 | 188 | 190 | 191 |
-| First Contentful Paint | 123 | 164 | 214 | 223 | 225 | 225 |
-| Largest Contentful Paint | 221 | 272 | 333 | 338 | 340 | 341 |
-| Full page load | 130 | 167 | 233 | 318 | 470 | 508 |
+| TTFB | 0 | 41 | 143 | 183 | 208 | 214 |
+| DOM Content Loaded | 102 | 122 | 232 | 257 | 260 | 261 |
+| First Contentful Paint | 140 | 164 | 276 | 298 | 305 | 307 |
+| Largest Contentful Paint | 258 | 300 | 412 | 433 | 451 | 455 |
+| Full page load | 145 | 178 | 307 | 402 | 572 | 614 |
 
 ### Dashboard
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 58 | 89 | 343 | 461 | 607 | 644 |
-| DOM Content Loaded | 153 | 192 | 492 | 576 | 708 | 741 |
-| First Contentful Paint | 155 | 220 | 529 | 613 | 745 | 778 |
-| Largest Contentful Paint | 155 | 220 | 529 | 613 | 745 | 778 |
-| Full page load | 193 | 237 | 643 | 724 | 775 | 788 |
+| TTFB | 57 | 126 | 441 | 569 | 720 | 758 |
+| DOM Content Loaded | 110 | 202 | 565 | 654 | 775 | 805 |
+| First Contentful Paint | 144 | 236 | 615 | 701 | 808 | 835 |
+| Largest Contentful Paint | 144 | 236 | 615 | 701 | 808 | 835 |
+| Full page load | 163 | 255 | 778 | 923 | 1050 | 1081 |
 
 ### Mon profil
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 68 | 175 | 411 | 464 | 498 | 507 |
-| DOM Content Loaded | 163 | 275 | 504 | 560 | 594 | 603 |
-| First Contentful Paint | 220 | 321 | 557 | 615 | 645 | 653 |
-| Largest Contentful Paint | 220 | 321 | 557 | 615 | 645 | 653 |
-| Full page load | 225 | 337 | 589 | 651 | 656 | 657 |
+| TTFB | 61 | 163 | 294 | 421 | 571 | 609 |
+| DOM Content Loaded | 116 | 272 | 418 | 502 | 648 | 685 |
+| First Contentful Paint | 184 | 331 | 478 | 557 | 706 | 743 |
+| Largest Contentful Paint | 184 | 331 | 478 | 557 | 706 | 743 |
+| Full page load | 203 | 340 | 498 | 580 | 730 | 768 |
 
 ### Connexion & Sécurité
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 70 | 110 | 255 | 299 | 310 | 313 |
-| DOM Content Loaded | 157 | 231 | 367 | 456 | 541 | 562 |
-| First Contentful Paint | 198 | 266 | 410 | 505 | 603 | 628 |
-| Largest Contentful Paint | 198 | 266 | 410 | 505 | 603 | 628 |
-| Full page load | 213 | 284 | 423 | 519 | 609 | 632 |
+| TTFB | 63 | 94 | 235 | 309 | 411 | 436 |
+| DOM Content Loaded | 126 | 194 | 368 | 455 | 562 | 589 |
+| First Contentful Paint | 184 | 252 | 375 | 452 | 591 | 626 |
+| Largest Contentful Paint | 184 | 252 | 375 | 452 | 591 | 626 |
+| Full page load | 206 | 256 | 419 | 501 | 614 | 642 |
 
 ### Coming-soon placeholder (Mes RDV)
 
 | Metric | min | P50 | P90 | P95 | P99 | max |
 |---|---|---|---|---|---|---|
-| TTFB | 63 | 118 | 277 | 313 | 323 | 325 |
-| DOM Content Loaded | 125 | 217 | 383 | 414 | 414 | 414 |
-| First Contentful Paint | 174 | 250 | 423 | 463 | 475 | 478 |
-| Largest Contentful Paint | 174 | 250 | 423 | 463 | 475 | 478 |
-| Full page load | 180 | 265 | 427 | 466 | 477 | 480 |
+| TTFB | 51 | 113 | 276 | 340 | 429 | 451 |
+| DOM Content Loaded | 117 | 199 | 363 | 422 | 516 | 539 |
+| First Contentful Paint | 145 | 278 | 387 | 451 | 547 | 571 |
+| Largest Contentful Paint | 145 | 278 | 387 | 451 | 547 | 571 |
+| Full page load | 162 | 282 | 405 | 462 | 560 | 585 |

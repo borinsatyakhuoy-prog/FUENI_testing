@@ -23,8 +23,8 @@ exploration) - these are exploratory only, not yet backed by an automated doctor
 | Metric | Count |
 |---|---|
 | Test cases planned (manual + automated) | 56 automated + exploratory pass covering the same scope |
-| Automated test cases executed | 58 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe); as of Session 9 executed across all 3 browser projects (chromium + firefox + webkit = 177 runs incl. the seed test) |
-| Passing reliably | 150/177 (84.7%) across all 3 browsers as of Session 9 - see below for why the cross-browser rate is lower than the chromium-only 92.9% baseline |
+| Automated test cases executed | 58 (32 original + 9 added in Session 2 + 1 performance suite in Session 3 + 14 non-happy-path additions in Session 6 + 2 added in Session 8 - the long-session journey and load/stress probe); executed across all 3 browser projects (chromium + firefox + webkit = 177 runs incl. the seed test) in Sessions 9-10 |
+| Passing reliably | 150-153/177 (84.7-86.4%) across all 3 browsers over 2 full reruns (Sessions 9-10, no code changes between them) - see below for why the cross-browser rate is lower than the chromium-only 92.9% baseline, and why the exact count shifts slightly run to run |
 | Failing by design (documents a real, open defect) | 2 (auth/006, plus the new webkit-specific auth/010 instability - Issue 11) |
 | Blocked by an external anti-automation control (Cloudflare Turnstile/escalation) | 5 tests × 3 browsers - as of Session 8 these are marked **skipped** (not failed), each with an inline reason, rather than left as red failures for a condition no test-side fix can address (see Issue 3) |
 | Manual exploratory testing | Completed for every currently-built feature, plus a second
@@ -304,6 +304,34 @@ in Session 8: **177 runs** (171 + the new journey and load specs × 3 browsers),
   escalated to a numbered issue, since a single occurrence with no error message and a clean retry
   isn't enough to call it reproducible.
 
+### Session 10 (2026-08-20) - third full run, no code changes since Session 9
+
+Re-ran the full suite again with zero code changes since Session 9's commit, purely to check
+run-to-run stability. **177 runs, 153 passed (86.4%), 4 failed (2.3%), 2 flaky (1.1%), 18 skipped
+(10.2%)**, 32m51s.
+
+- **Issues 1 and 10 reconfirmed unchanged:** `auth/006` (chromium + firefox), `security/004`
+  (firefox) - identical to both prior sessions.
+- **Issue 11 (`auth/010`) shifted which browser it hit hardest - new evidence it's a genuine race,
+  not an engine-specific bug.** Session 8 saw webkit fail all 3 attempts and chromium/firefox
+  merely flaky; this run, **firefox** failed all 3 attempts outright
+  (`NS_BINDING_CANCELLED_OLD_LOAD` on `page.goBack()`, not just the earlier
+  `not.toBeVisible()` symptom) while **webkit** was the flaky one this time and chromium passed
+  clean. Three runs, three different severity patterns across the same three engines is stronger
+  evidence for a real, timing-dependent race in the app's post-back-navigation session check than
+  for a per-browser quirk - see the updated recommendation for Issue 11 below.
+- **The load/stress probe (described above) surfaced its most informative result yet, on webkit only:**
+  2 of 5 requests errored at the very first, lightest ramp step (concurrency=5) -
+  `Execution context was destroyed, most likely because of a navigation` - well below where
+  chromium has ever shown any error in prior runs (chromium/firefox have only ever degraded
+  starting around concurrency=10). This is new evidence favoring the "local browser-process
+  resource contention" explanation over "server-side throttling": if the shared staging host
+  itself were the bottleneck, there's no reason webkit specifically would fail 40% of requests at
+  a concurrency level chromium handles cleanly - Playwright's webkit driver is known to be less
+  robust running many parallel contexts in a single process. Still not fully conclusive without a
+  dedicated load-testing tool (see recommendation #15), but the balance of evidence has shifted.
+  The test itself was correctly classified as flaky (retry passed), exactly as designed.
+
 ## 4. Defects Log
 
 ### Issue 1 - Console error on logout (CORS-blocked RSC fetch)
@@ -490,6 +518,15 @@ in Session 8: **177 runs** (171 + the new journey and load specs × 3 browsers),
   to be a fair check versus racing the same window the app itself is racing. Do not widen the
   timeout as the only fix without first confirming whether real users can perceive the stale page
   during that window.
+- **Update (Session 10, 2026-08-20):** a third full run, no code changes, shifted which engine
+  failed hardest - this time **firefox** failed all 3 attempts outright (a new symptom too:
+  `NS_BINDING_CANCELLED_OLD_LOAD` on the `page.goBack()` call itself, not just the later
+  `not.toBeVisible()` check), **webkit** was merely flaky, and chromium passed clean. Three runs,
+  three different severity rankings across the same three engines rules out "this is just how
+  WebKit's bfcache works" as the explanation - it's a timing race whose outcome depends on
+  conditions at run time (likely how loaded the shared staging host/this suite's own session
+  history happens to be at that moment), not a fixed per-engine limitation. Strengthens the
+  recommendation above rather than changing it.
 
 ### Finding - Unknown-route 404 page is generic and unbranded (new, 2026-08-18)
 - **Severity:** Low (cosmetic/consistency only - the 404 itself works correctly: real HTTP 404,
