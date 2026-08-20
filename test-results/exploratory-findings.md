@@ -523,3 +523,69 @@ being rate-limited or slow under heavy automated load, separate from the Turnsti
 enough evidence yet to call this a confirmed distinct root cause; flagged here so a future session
 doesn't have to rediscover it, and so it's watched for separately from the Turnstile pattern going
 forward.
+
+---
+
+# Session 8 (2026-08-20) - Targeted exploratory pass on previously-untouched areas
+
+**Goal:** a general exploratory pass focused specifically on areas not yet covered across the
+prior 7 sessions - the authenticated area's language switcher (only the pre-login switcher was
+previously confirmed), the security page's legal-document links (never clicked), password-change
+field-level validation (never exercised, even without submitting), and the GDPR data export
+(previously only confirmed "safe to execute", never actually executed or content-inspected).
+
+## Issue 7 (new) - "Politique de confidentialité" and "Conditions générales (CGU)" buttons are dead
+
+See `defects/patient-security-page-legal-links-dead-buttons/README.md` for the full write-up.
+Summary: both buttons on `/fr/security` under "Mon compte & mes données" are real `<button>`
+elements with no attached behavior at all - no dialog, no navigation, no new tab, no network
+request, no console error. Third confirmed instance of this exact "silently dead interactive
+control" pattern in this app (after the notifications bell and, in the admin console, nothing
+comparable found yet). Arguably higher-priority than the notifications bell given this is a
+healthcare platform marketing RGPD/HDS compliance with no reachable Privacy Policy.
+
+## Positive finding - authenticated-area language switcher fully works, not just pre-login
+
+Session 2 only confirmed the *pre-login* login-page language switcher was fully functional and
+explicitly left the authenticated-area switcher untested ("no new automated test added - out of
+scope for this pass"). Confirmed live this session: clicking "Changer de langue" on the
+authenticated dashboard opens the same real menu (Français/English), and choosing English fully
+translates the entire authenticated shell - sidebar section headings, every nav-item label,
+"Sign out", the greeting heading/subtext, empty-state copy, and the switcher's own button label -
+via a `/fr/dashboard` → `/en/dashboard` URL swap. Switching back to Français worked identically.
+No defect; upgrades the prior session's "not yet confirmed for the authenticated area" note to a
+fully-confirmed positive result.
+
+## Positive finding - password-change field validation is correct and safe to probe without submitting
+
+Opening "Changer" under "Mot de passe" reveals an inline form (current password, new password
+with a live strength meter and a 6-item requirement checklist, Annuler/Enregistrer). Typing a
+strong new password (`Str0ng!Passw0rd`) correctly updated the live meter to "Très fort" in
+real time - but "Enregistrer" correctly stayed disabled throughout, because the *current*
+password field was still empty. This confirms the save gate checks for a non-empty current
+password independently of new-password strength, not just an all-fields-present check that could
+be satisfied by strength alone. Cancelled via "Annuler" without ever submitting - the shared
+account's real password was never at risk.
+
+## Positive finding - GDPR data export executed for real, content confirmed complete and correctly scoped
+
+Previously (Session 2) only confirmed the export flow *reaches* a password-confirmation dialog and
+is "safe to execute for real" - never actually executed. Executed it for real this session:
+after re-entering the account password in the "Confirmez votre identité" dialog, a genuine file
+download fired (`fueni-mes-donnees-<patientId>.json`). Contents inspected and confirmed complete,
+accurate, and correctly scoped: `identity` (name, DOB, sex), `contact` (email + verified flag,
+phone), `location` (country/region/city/address), `languages`, `emergencyContact`,
+`notificationPreferences`, and `account` (patientId, status, language) - matching exactly what's
+shown across Mon profil/Connexion & Sécurité, with **no** password hash, session token, or other
+security-sensitive field included. No appointments/documents included either, consistent with
+those features being genuinely empty for this account (not a scoping bug). The downloaded file
+(containing real account PII, even if test data) was deleted after inspection rather than left in
+the repo's scratch directory - no defect found, the feature works exactly as advertised.
+
+## Minor note - "Rester connecté" checkbox now defaults to checked
+
+Not previously documented either way. Confirmed this session: the login page's "Rester connecté"
+("Keep me signed in") checkbox is checked by default on both the Téléphone and E-mail tabs. Not
+investigated further (would require comparing session/cookie expiry with it unchecked, which
+wasn't done this pass) - noting only the default state for a future session that wants to verify
+the actual duration difference.
