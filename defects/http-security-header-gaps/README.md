@@ -34,6 +34,13 @@ matter of consistent hygiene.
 
 ### 3. Content-Security-Policy is present but doesn't mitigate XSS
 
+**Scope confirmed 2026-08-21:** identical (missing `script-src`/`default-src`) on the doctor
+(`fueni-staging-preview-pro`) and admin (`fueni-staging-preview-admin`) login pages too - all
+three roles' login flows terminate at the same shared Keycloak/nginx layer, so this and finding
+#4's `Referrer-Policy` conflict are a single shared-layer misconfiguration affecting all three
+apps, not patient-specific.
+
+
 The CSP header sent is: `frame-src 'self'; frame-ancestors 'self'; object-src 'none';` - this
 restricts framing/embedding (clickjacking-adjacent) and object embeds, but sets no `script-src`
 or `default-src` directive at all. Script execution is entirely unrestricted by this policy, so
@@ -62,6 +69,14 @@ Next.js app (confirmed on `/fr/dashboard`) does define one: `script-src 'self' '
 Having a script-src is better than none, but `'unsafe-inline'` and `'unsafe-eval'` are
 well-documented anti-patterns that remove most of what a script-src CSP defends against: HTML
 injection can still run inline `<script>`/event-handler payloads, and `eval`/`new
+
+**Scope confirmed 2026-08-21:** this is a single app-wide policy, not a `/fr/dashboard`-specific
+one - identical on `/fr/my-profile`, `/fr/security`, and `/fr/appointments` too. Also worth
+flagging: the same policy's `connect-src 'self' wss: https: blob:` permits `fetch`/`XHR`/
+WebSocket connections to *any* HTTPS or WSS host, not just the app's own backend - so even if
+`unsafe-inline`/`unsafe-eval` were removed, an injected script (from some other XSS vector) could
+still exfiltrate data to an arbitrary attacker-controlled HTTPS endpoint under the current
+`connect-src`. Worth tightening alongside the `script-src` fix, not just after it.
 Function`-based execution isn't blocked either. Live regression test:
 `tests/fueni-test/security/010_csp-unsafe-inline-eval.spec.ts`.
 

@@ -22,10 +22,25 @@ import { registerFreshDoctorToPlanStep, loginDoctor, FreshDoctor } from '../help
  * defects/improvement/test-account-provisioning.md. Every assertion below is backed by
  * manually-confirmed live evidence (test-case/doctor/plan-selection-gate-fue-818/README.md) even
  * though a fully green unattended run couldn't be verified from this session for that reason.
+ *
+ * Reconfirmed 2026-08-21: two consecutive unattended runs (5 registrations each, back-to-back)
+ * both came back 5/5 failed on the OTP wait with no spacing between registrations. A fixed
+ * cooldown between this file's registrations is a best-effort mitigation, not a confirmed fix -
+ * bump REGISTRATION_COOLDOWN_MS if OTPs still don't land.
  */
 test.use({ baseURL: process.env.FUENI_PRO_BASE_URL });
 
+const REGISTRATION_COOLDOWN_MS = 45_000;
+let registrationCount = 0;
+
 test.describe('FUE-818 - Doctor plan-selection gate', () => {
+  test.beforeEach(async () => {
+    if (registrationCount > 0) {
+      await new Promise((resolve) => setTimeout(resolve, REGISTRATION_COOLDOWN_MS));
+    }
+    registrationCount++;
+  });
+
   test('the plan gate blocks the dashboard and cannot be dismissed until a plan is chosen', async ({
     page,
   }) => {

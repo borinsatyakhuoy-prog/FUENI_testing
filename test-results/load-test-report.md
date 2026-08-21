@@ -2,11 +2,11 @@
 
 Deliberately bounded (max concurrency 15) - see the spec file header for why this suite does not run an unbounded/production-grade load test against this shared staging host.
 
-Single-request baseline (full page load): 124ms
+Single-request baseline (full page load): 99ms
 
 | Concurrency | Errors | Load P50 (ms) | Load P90 (ms) | vs. baseline (P90) |
 |---|---|---|---|---|
-| 5 | 1/5 | 359 | 547 | 4.4x |
+| 5 | 1/5 | 360 | 501 | 5.1x |
 
 **Ramp stopped early:** error rate 20% at concurrency=5 exceeded the 10% stop threshold.
 
