@@ -1,6 +1,7 @@
 # Improvement: Get dedicated load-testing tooling before drawing capacity conclusions
 
-**Priority: Low** (informational/tooling gap, not a product defect).
+**Priority: Medium** (raised 2026-08-21 - see below; originally Low as an informational/tooling
+gap, not a product defect).
 
 ## The problem
 
@@ -22,3 +23,11 @@ launch), run a proper tool (k6, artillery, or similar) from a **separate process
 hitting only stateless/pre-auth endpoints to avoid the shared account's Turnstile/rate-limit
 budget - same safety principle this suite's own probe already follows, just with tooling that
 can actually isolate the variable this probe can't.
+
+**Priority raised, 2026-08-21:** an explicitly-authorized deeper probe past `load/001`'s normal
+safety thresholds found the degradation isn't a mild slope - it's a sharp cliff (P90 latency
+62x-124x baseline once concurrency exceeds ~5), reproduced consistently across 3 independent
+runs, with a flat ~15-20% error rate at every level regardless of load. See
+`defects/login-page-severe-latency-cliff-above-5-concurrent`. This is a stronger, better-evidenced
+signal than what prompted this improvement note originally - worth actually prioritizing the
+dedicated-tooling ask now rather than leaving it as a low-priority "someday" item.

@@ -1,7 +1,8 @@
 # Defect: Audit log attributes actions to a generic role label ("Secondary Admin"), not the actual named individual
 
-**Status:** CONFIRMED via direct observation, 2026-08-20. Not yet covered by an automated test
-(no admin-role automated suite exists yet - see `tickets/ADMIN-ROLE-exploration-notes`).
+**Status:** CONFIRMED via direct observation, 2026-08-20; reconfirmed still unfixed 2026-08-21
+(same account, one day later). Not yet covered by an automated test (no admin-role automated
+suite exists yet - see `tickets/ADMIN-ROLE-exploration-notes`).
 
 **Severity: Medium/High.** This is a real accountability gap in the one feature (`Journal
 d'audit`) whose entire purpose is individual accountability, on a system that explicitly claims
@@ -60,6 +61,15 @@ label is shared across whoever occupies that seat rather than being unique per i
 Observed live via Playwright browser automation, 2026-08-20: sidebar account-menu snapshot
 ("Test Admin") vs. `/fr/audit-logs` table snapshot ("Secondary Admin" on rows timestamped
 seconds after that same login), plus historical "Secondary Admin" rows dated 14/17/18 Aug 2026.
+
+**Reconfirmed 2026-08-21, still unfixed:** logged in again with the same account (account-menu
+still shows "Test Admin / Super Admin"), went straight to `/fr/audit-logs`, and the very top row -
+this session's own login, timestamped seconds earlier (21 Aug 2026 15:19:18, "Succès Connexion
+administrateur") - is again attributed to "Secondary Admin" in both the **Admin** and **Cible**
+columns. The table now also shows a full day of other "Secondary Admin"-attributed login/logout
+activity from 20-21 Aug (several round trips between 13:40 and 17:05 on the 20th alone) -
+consistent with a real team actively using this account day-to-day, all of it still logged under
+the same generic label a full day after this defect was first flagged.
 
 ## Recommendation
 
