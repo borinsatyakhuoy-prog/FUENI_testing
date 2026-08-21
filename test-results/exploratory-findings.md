@@ -589,3 +589,101 @@ Not previously documented either way. Confirmed this session: the login page's "
 investigated further (would require comparing session/cookie expiry with it unchecked, which
 wasn't done this pass) - noting only the default state for a future session that wants to verify
 the actual duration difference.
+
+---
+
+# Session 9 (2026-08-21) - Doctor login-flow pre-auth checks, "Rester connecté" mechanism closed out
+
+**Goal:** with the doctor role's authenticated area still unreachable (see below), split effort
+between the doctor login page's never-checked pre-auth validation behavior and a previously
+flagged-but-unexplored gap: what "Rester connecté" actually does mechanically.
+
+## Doctor registration confirmed broken again (not new, but newly reconfirmed)
+
+4 fresh temp-mail doctor registrations this session, across two separate batches, **all 4 failed
+identically** at the email-OTP wait - same root cause already tracked in
+`tickets/DOCTOR-ROLE-registration-blocked-by-turnstile` and the cooldown mitigation in
+`tests/fueni-test/doctor/001_plan-selection-gate.spec.ts`. Logged as a fresh "still broken"
+data point in that ticket rather than re-diagnosed (root cause needs mail-log/Cloudflare-dashboard
+access this suite doesn't have).
+
+## Doctor login page pre-auth checks (new) - see `test-case/doctor/login-flow/README.md`
+
+With the authenticated path blocked, checked the doctor login page's own validation instead
+(never checked before - only its structure was). All three come back clean, no defects:
+anti-enumeration (real identifier + wrong password gives the identical generic error as a
+nonexistent one - same protection already confirmed on admin), empty-field validation ("Veuillez
+saisir votre identifiant et votre mot de passe."), and malformed-email validation ("Adresse
+e-mail invalide.").
+
+## "Rester connecté" mechanism fully resolved (closes the Session 8 open note above)
+
+Compared cookies from two independent fresh logins (checked vs. unchecked), then simulated an
+actual browser restart for each by opening a brand-new browser context seeded with only the
+*persistent* (non session-only) cookies from that login, and visiting `/fr/dashboard` directly:
+
+- **Checked:** Keycloak's `KEYCLOAK_IDENTITY` and `KEYCLOAK_SESSION` cookies persist with a real
+  expiry, plus a `KEYCLOAK_REMEMBER_ME` cookie appears (~365 days out). After the simulated
+  restart, visiting `/fr/dashboard` landed straight on the dashboard - no login form, silent SSO
+  re-authentication, no password re-entry needed.
+- **Unchecked:** `KEYCLOAK_IDENTITY` is session-only instead, and `KEYCLOAK_REMEMBER_ME` is never
+  set at all. After the same simulated restart, `/fr/dashboard` correctly bounced to a real
+  Keycloak login form requiring credentials again.
+- **Notable either way:** the patient app's *own* `SESSION` cookie (the actual BFF session,
+  `defects/http-security-header-gaps` finding #1) is **always** session-only regardless of the
+  checkbox - "Rester connecté" doesn't keep the app itself logged in across a browser restart:
+  it lets Keycloak silently re-authenticate you (skip re-entering your password) when you revisit
+  and go through the login redirect again, which then mints a fresh `SESSION` cookie. A real
+  browser-close-and-reopen (not just a new context) would very likely behave the same, since
+  cookie persistence is what's being tested here, not anything else browser-restart-specific -
+  not separately re-verified with an actual OS-level browser restart.
+
+No defect - this is the checkbox working exactly as intended, just not previously confirmed
+mechanically. Ad-hoc Playwright scripts used for both checks were deleted after use, not added as
+permanent specs.
+
+---
+
+# Session 10 (2026-08-21) - Patient app: unsaved-edit safety and a concurrency check
+
+**Goal:** continued exploration of the patient app, staying inside the suite's established
+real-data-safety boundary (never click "Enregistrer" on Location/Emergency-contact/Identity/
+Contact-info forms against the shared account; the notification-preference toggle is the one
+exception already treated as safe to mutate-and-revert).
+
+## New defect - language switch silently discards an unsaved edit form
+
+See `defects/language-switch-discards-unsaved-edit-silently/README.md`. Summary: opening the
+"Contact d'urgence" edit form, typing a value, then switching language via the authenticated-area
+switcher triggers a full page navigation (`/fr/my-profile` → `/en/my-profile`) that silently
+closes the edit form and discards the typed input - no "unsaved changes" warning at any point.
+Confirmed via direct DOM inspection that the typed probe string was gone after the switch. No
+real data was at risk (the shared account's actual emergency-contact fields were never touched -
+"Enregistrer" was never clicked), but a real user doing this with real input would lose it
+silently.
+
+## Positive finding - rapid double-toggle on the SMS reminder preference is race-free
+
+Fired two clicks on the "Rappels de rendez-vous par SMS" switch back-to-back, without waiting for
+the first PUT to resolve, to check for a lost-update race condition. Both `PUT
+.../notification-preferences` requests fired and succeeded (bodies `{smsReminders:false,...}`
+then `{smsReminders:true,...}`, i.e. two independent, correctly-ordered toggles rather than a
+desync), and the final UI state matched the server state after a reload. Reverted to the
+original baseline (checked) and reconfirmed after a final reload - the shared account was left
+exactly as found. No defect.
+
+## New defect - export-data dialog doesn't return focus to its trigger on close
+
+See `defects/dialog-close-does-not-return-focus-to-trigger/README.md`. The dialog itself is
+well-built for keyboard use - confirmed a real focus trap (8 consecutive `Tab` presses cycled
+through exactly its own 4 focusable elements, never escaping to the page) and `Escape` correctly
+cancels without triggering an export. But once closed, `document.activeElement` becomes `<body>`
+rather than the "Exporter mes données" button that opened it (confirmed via direct equality
+check, not just an inference) - a keyboard/screen-reader user loses their place and has to
+re-navigate from the top of the page. Swept every other "Modifier"/"Changer" control that exists
+on both `/fr/security` and `/fr/my-profile` to map the real scope: all 4 controls on
+`/fr/security` (export, password, email, phone) share the identical gap, while both controls on
+`/fr/my-profile` (Localisation & langue, Contact d'urgence) correctly return focus to their own
+trigger - a clean page-level split, not one shared component with a universal gap. Useful side
+effect: `/fr/my-profile`'s component is a working reference implementation already in the same
+codebase for whoever fixes `/fr/security`'s.

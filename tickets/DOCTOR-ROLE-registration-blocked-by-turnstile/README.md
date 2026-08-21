@@ -87,6 +87,20 @@ gone; fresh self-registration is still Turnstile-blocked - see the sitekey diagn
 ask above, or asking whoever has console/database access to the FUENI staging Keycloak realm to
 manually clear/reset the 2FA requirement or re-send a readable OTP for `FUENI_PRO_EMAIL`.
 
+## Reconfirmed broken again, 2026-08-21
+
+4 fresh temp-mail-controlled registration attempts this session, spread across two separate
+batches (not a single rapid-fire loop), **all 4 failed identically**: registration form
+submission succeeds, the "Vérifiez votre adresse e-mail" OTP screen appears, but no OTP email
+from `noreply@fueni.com` ever arrives in the temp-mail inbox within 30s. This matches the
+2026-08-20 write-up's original blocker (Cloudflare escalation silently withholding the OTP email)
+and the two 5/5-failed batches already noted in `tests/fueni-test/doctor/001_plan-selection-gate.spec.ts`'s
+header comment - so as of this session, the "partially resolved" status above does **not**
+currently hold; every fresh-registration attempt is blocked again at the same OTP-delivery step,
+regardless of spacing between attempts. Not re-diagnosed further (root cause is either Cloudflare
+or the FUENI mail-sending path, not something this suite can distinguish from the outside) - flag
+for whoever has access to the actual mail-sending logs/Cloudflare dashboard.
+
 ## Current doctor-role coverage (as of 2026-08-19)
 
 Confirmed live, no defects found besides `defects/doctor-country-not-listed-untranslated-english`:
